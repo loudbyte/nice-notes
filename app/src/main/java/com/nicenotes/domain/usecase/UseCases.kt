@@ -40,3 +40,8 @@ class ReorderNotesUseCase @Inject constructor(private val repo: NoteRepository) 
     suspend operator fun invoke(updates: List<Pair<String, Long>>) =
         repo.updatePositions(updates)
 }
+
+class GetNoteByIdUseCase @Inject constructor(private val repo: NoteRepository) {
+    suspend operator fun invoke(id: String): NoteEntity? = repo.getById(id)
+}
+

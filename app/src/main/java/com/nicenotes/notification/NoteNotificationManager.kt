@@ -17,7 +17,7 @@ object NoteNotificationManager {
 
     const val CHANNEL_ID = "nicenotes_reminders"
     const val CHANNEL_NAME = "Reminders"
-    const val EXTRA_NOTE_ID = "noteId"
+    const val EXTRA_NOTE_ID = MainActivity.EXTRA_NOTE_ID
 
     enum class DeliveryStatus {
         SHOWN,

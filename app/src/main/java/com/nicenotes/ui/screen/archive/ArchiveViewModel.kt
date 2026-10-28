@@ -3,8 +3,10 @@ package com.nicenotes.ui.screen.archive
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nicenotes.data.db.entity.NoteEntity
+import com.nicenotes.domain.usecase.ArchiveNoteUseCase
 import com.nicenotes.domain.usecase.DeleteNoteUseCase
 import com.nicenotes.domain.usecase.GetArchivedNotesUseCase
+import com.nicenotes.domain.usecase.SaveNoteUseCase
 import com.nicenotes.domain.usecase.UnarchiveNoteUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -19,7 +21,9 @@ import javax.inject.Inject
 class ArchiveViewModel @Inject constructor(
     getArchivedNotesUseCase: GetArchivedNotesUseCase,
     private val unarchiveNoteUseCase: UnarchiveNoteUseCase,
+    private val archiveNoteUseCase: ArchiveNoteUseCase,
     private val deleteNoteUseCase: DeleteNoteUseCase,
+    private val saveNoteUseCase: SaveNoteUseCase,
 ) : ViewModel() {
 
     val notes = getArchivedNotesUseCase()
@@ -44,16 +48,21 @@ class ArchiveViewModel @Inject constructor(
             deleteNoteUseCase(note)
             _events.send(UiEvent.ShowSnackbar(
                 message = "Note deleted",
-                action = null,
-                onAction = {}
+                action = "UNDO",
+                onAction = { restoreArchivedNote(note) }
             ))
         }
     }
 
     private fun archiveBack(note: NoteEntity) {
         viewModelScope.launch {
-            // Re-archive by updating isArchived flag
-            deleteNoteUseCase(note.copy(isArchived = false))
+            archiveNoteUseCase(note)
+        }
+    }
+
+    private fun restoreArchivedNote(note: NoteEntity) {
+        viewModelScope.launch {
+            saveNoteUseCase(note)
         }
     }
 }

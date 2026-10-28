@@ -2,7 +2,7 @@
 
 NiceNotes is a dark-themed Android notes app built with Kotlin and Jetpack Compose. It stores notes locally with Room and includes note editing, archive and pin/importance controls, reminders, a home-screen widget, and JSON import/export surfaces.
 
-> **Implementation status:** The app is an active implementation of [`nice_notes_implementation_plan.md`](./nice_notes_implementation_plan.md), not a complete realization of every plan item. Several features are partial or have known functional gaps; see [Implementation status and limitations](#implementation-status-and-limitations) and [`PROJECT_BLUEPRINT.md`](./PROJECT_BLUEPRINT.md).
+> **Current status:** NiceNotes is an active, standalone Android app in continuous development. Several features have known caveats and technical debt; see [Feature status and known limitations](#feature-status-and-known-limitations) and [`PROJECT_BLUEPRINT.md`](./PROJECT_BLUEPRINT.md).
 
 ## Features
 
@@ -10,9 +10,9 @@ NiceNotes is a dark-themed Android notes app built with Kotlin and Jetpack Compo
 - Search active notes via a collapsible search field (magnifier icon in header).
 - View full note content in the list without truncation.
 - Pin notes, mark them important, and manually reorder them in management mode.
-- Archive active notes by swiping; browse and unarchive notes from the Archive screen.
+- Archive active notes by swiping; browse, unarchive (swipe right), and delete (swipe left) notes from the Archive screen with undo.
 - Set one-time or daily, weekly, and monthly repeating reminders.
-- Receive reminder notifications and reopen the app from a notification.
+- Receive reminder notifications and tap to open the note directly in the editor.
 - View and scroll through all active notes in a home-screen widget; each preview is limited to one line with overflow ellipsized. Tap `+` to open a new note.
 - Scroll-to-top button appears when scrolling down through notes.
 - Notes count displayed at the top of the main screen.
@@ -24,10 +24,10 @@ The feature list describes implemented UI/code surfaces. Some behaviors have cav
 ## Requirements
 
 - Android Studio with an Android SDK Platform 36 installation.
-- JDK 17 to run the Gradle 8.14.6 wrapper, Android Gradle Plugin 8.13.2, and Kotlin 2.3.21 build.
+- JDK 17 to run the Gradle 8.14.6 wrapper, Android Gradle Plugin 8.13.2, and Kotlin 2.3.21 build targeting Java 17 bytecode.
 - An Android device or emulator running API 36 or newer.
 
-The app is configured with `minSdk = 36`, `compileSdk = 36`, and `targetSdk = 36`, aligning with the implementation plan specification.
+The app is configured with `minSdk = 36`, `compileSdk = 36`, and `targetSdk = 36`.
 Library and plugin versions are centralized in [`gradle/libs.versions.toml`](./gradle/libs.versions.toml).
 
 ## Build and run
@@ -53,7 +53,7 @@ The Room database is `nicenotes.db`, with the `notes` table defined by `NoteEnti
 
 The repository includes [`example-of-data.json`](example-of-data.json), a sample legacy JSON export. The unit test suite checks that it parses as 2,164 notes (1,355 active and 809 archived) and exercises a 50-note export/re-import round trip.
 
-Import and export are exposed from **Settings → Data**. Imported note IDs use Room upsert semantics, so matching IDs overwrite existing records. Review [Implementation status and limitations](#implementation-status-and-limitations) before relying on in-app export as a backup.
+Import and export are exposed from **Settings → Data**. Imported note IDs use Room upsert semantics, so matching IDs overwrite existing records. Review [Feature status and known limitations](#feature-status-and-known-limitations) before relying on in-app export as a backup.
 
 ## Architecture and code map
 
@@ -62,13 +62,17 @@ The project is a single Android app module (`:app`) organized around Compose scr
 ```text
 app/src/main/java/com/nicenotes/
 ├── data/
-│   ├── db/                 Room database, DAO, and note entity
-│   ├── export/              Legacy and versioned JSON mapping
+│   ├── db/
+│   │   ├── entity/          NoteEntity
+│   │   ├── NoteDao.kt
+│   │   └── NoteDatabase.kt
+│   ├── export/              ExportSchema, LegacyNote, ImportExportManager
 │   └── repository/          Note operations and widget refresh triggers
 ├── di/                      Hilt database and notification modules
-├── domain/usecase/          Note list, search, save, archive, delete, reorder actions
+├── domain/usecase/          UseCases (CRUD, archive, reorder, lookup)
 ├── notification/            Exact-alarm reminders, WorkManager fallback, and boot rescheduling
 ├── ui/
+│   ├── Screen.kt            Navigation route definitions
 │   ├── screen/              Main, editor, archive, and settings screens/ViewModels
 │   ├── component/           Reminder dialog
 │   └── theme/               Dark Material 3 theme
@@ -79,22 +83,22 @@ app/src/main/java/com/nicenotes/
 
 For subsystem relationships, data flows, and the implementation audit, see [`PROJECT_BLUEPRINT.md`](./PROJECT_BLUEPRINT.md).
 
-## Implementation status and limitations
+## Feature status and known limitations
 
-The plan's core scaffolding and most screen/code structures exist. The following planned behaviors are incomplete or need correction before they should be treated as reliable:
+The application's core architecture and primary screen structures are in place. The following areas have known functional caveats or work in progress:
 
 | Area | Current state |
 |---|---|
-| SDK target | `compileSdk`/`targetSdk`/`minSdk` are all 36, matching the plan. |
-| Theme and typography | Dark theme and palette exist. The planned downloadable Inter font is not configured. |
+| SDK target | `compileSdk`/`targetSdk`/`minSdk` are all 36 for modern Android environments. |
+| Theme and typography | Dark theme and palette are implemented. Inter downloadable font is not yet configured. |
 | Notes, search, pinning, importance | Main/editor UI and Room flows are present. |
-| Archive and reorder | Main-screen swipe archive, archive listing/unarchive, and drag reorder are present. The Archive screen does not implement the planned management mode; archive deletion has no undo, and its undo path for unarchive is incorrect. |
+| Archive and reorder | Main-screen swipe archive, drag reorder, and Archive screen swipe-to-unarchive and swipe-to-delete are present with undo. Bulk archive management mode is not yet implemented. |
 | Reminders | Future reminders use exact alarms while idle when Android exact-alarm access is allowed, with a WorkManager fallback and a warning when exact access is unavailable. Notification and exact-alarm access are requested when saving a reminder; disabled notifications or channel sound link to system settings. The channel uses the system default notification sound unless changed in Android settings. Boot, app-update, and permission-grant rescheduling are supported. Past reminder times are rejected. Archiving does not cancel an existing reminder; repeating monthly reminders use a fixed 30-day interval rather than calendar-month rules. |
-| Undo | Main-screen archive/delete snackbars expose undo. Archive-screen delete does not, and Archive unarchive's undo handler deletes the note rather than re-archiving it. |
-| Widget | A native RemoteViews `ListView` collection displays all active notes in DAO order, clips previews to one line, and refreshes after repository mutations. Each row passes its note ID to the app; the add-note control sends a dedicated receiver action that opens note creation, including when the app is already running. Click bindings are refreshed after app updates and activity launches. |
+| Undo | Main-screen and Archive-screen archive, unarchive, and delete snackbars all expose functional undo actions. |
+| Widget | A native RemoteViews `ListView` collection displays all active notes in DAO order, clips previews to one line, and refreshes after repository mutations. Each row passes its note ID to the app; the add-note control sends an Activity intent (`ACTION_CREATE_NOTE`) that opens note creation, including when the app is already running. Click bindings are refreshed after app updates and activity launches. |
 | Import | Legacy bare arrays and versioned exports are parsed and upserted. Validation is limited, and parser failures can be reported as a successful import of zero notes. Import does not reschedule imported reminders. |
 | Export | JSON serialization and FileProvider sharing code exist, but the Settings ViewModel collects a long-lived Room `Flow` instead of taking one snapshot. As a result, the export operation can remain suspended and fail to produce a share event; it also reads only active notes. |
-| Tests | Two JVM test classes cover sample-data import/export and simple RRULE interval parsing. The planned DAO/in-memory Room tests and Compose UI tests are absent. |
+| Tests | Two JVM test classes cover sample-data import/export and simple RRULE interval parsing. In-memory Room DAO tests and Compose UI tests are currently absent. |
 
 This review is based on the checked-in source and a successful unit-test run; it is not a claim that every interaction has been manually tested on a device. Refer to the blueprint for the recommended completion order.
 

@@ -81,16 +81,19 @@ fun MainScreen(
         }
     }
 
-    // Handle deep link from notification
-    LaunchedEffect(openNoteId, openNoteRequestId, notes) {
-        if (openNoteId != null) {
-            val note = notes.find { it.mLocalId == openNoteId }
+    // Handle deep link from notification or widget
+    var handledOpenNoteRequestId by remember { mutableStateOf<Long?>(null) }
+    LaunchedEffect(openNoteRequestId, openNoteId) {
+        if (openNoteId != null && openNoteRequestId != 0L && openNoteRequestId != handledOpenNoteRequestId) {
+            handledOpenNoteRequestId = openNoteRequestId
+            val note = viewModel.getNoteById(openNoteId)
             if (note != null) {
                 editingNote = note
                 showEditorSheet = true
             }
         }
     }
+
 
     // Handle create note action from widget
     LaunchedEffect(createNoteRequestId) {

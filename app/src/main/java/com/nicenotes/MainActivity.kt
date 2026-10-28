@@ -57,7 +57,8 @@ class MainActivity : ComponentActivity() {
     private fun updateNavigationRequest(intent: Intent) {
         navigationRequest = NavigationRequest(
             id = ++requestSequence,
-            noteId = intent.getStringExtra(EXTRA_NOTE_ID),
+            noteId = intent.getStringExtra(EXTRA_NOTE_ID)
+                ?: intent.getStringExtra(EXTRA_LEGACY_NOTE_ID),
             createNote = intent.action == ACTION_CREATE_NOTE ||
                 intent.getStringExtra(EXTRA_ACTION) == ACTION_CREATE
         )
@@ -65,6 +66,7 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_NOTE_ID = "note_id"
+        const val EXTRA_LEGACY_NOTE_ID = "noteId"
         const val EXTRA_ACTION = "action"
         const val ACTION_CREATE = "create"
         const val ACTION_CREATE_NOTE = "com.nicenotes.action.CREATE_NOTE"

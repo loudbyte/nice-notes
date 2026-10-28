@@ -98,16 +98,24 @@ fun ArchiveScreen(
                     items = notes,
                     key = { it.mLocalId }
                 ) { note ->
-                    // Swipe right to unarchive
+                    // Swipe right to unarchive, swipe left to delete
                     val dismissState = rememberSwipeToDismissBoxState(
                         confirmValueChange = { value ->
-                            if (value == SwipeToDismissBoxValue.StartToEnd) {
-                                viewModel.unarchiveNote(note)
-                                true
-                            } else false
+                            when (value) {
+                                SwipeToDismissBoxValue.StartToEnd -> {
+                                    viewModel.unarchiveNote(note)
+                                    true
+                                }
+                                SwipeToDismissBoxValue.EndToStart -> {
+                                    viewModel.deleteNote(note)
+                                    true
+                                }
+                                else -> false
+                            }
                         }
                     )
 
+                    val isDelete = dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart
                     SwipeToDismissBox(
                         state = dismissState,
                         backgroundContent = {
@@ -115,18 +123,22 @@ fun ArchiveScreen(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .padding(horizontal = 12.dp, vertical = 4.dp)
-                                    .background(ReminderBlue, RoundedCornerShape(12.dp)),
-                                contentAlignment = Alignment.CenterStart
+                                    .background(
+                                        if (isDelete) ImportantRed else ReminderBlue,
+                                        RoundedCornerShape(12.dp)
+                                    ),
+                                contentAlignment = if (isDelete) Alignment.CenterEnd else Alignment.CenterStart
                             ) {
                                 Text(
-                                    "Unarchive",
+                                    if (isDelete) "Delete" else "Unarchive",
                                     color = AccentWhite,
-                                    modifier = Modifier.padding(start = 16.dp)
+                                    modifier = Modifier.padding(horizontal = 16.dp),
+                                    style = MaterialTheme.typography.bodyMedium
                                 )
                             }
                         },
                         enableDismissFromStartToEnd = true,
-                        enableDismissFromEndToStart = false,
+                        enableDismissFromEndToStart = true,
                     ) {
                         NoteListItem(
                             note = note,

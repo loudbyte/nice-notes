@@ -6,6 +6,7 @@ import com.nicenotes.data.db.entity.NoteEntity
 import com.nicenotes.domain.usecase.ArchiveNoteUseCase
 import com.nicenotes.domain.usecase.DeleteNoteUseCase
 import com.nicenotes.domain.usecase.GetActiveNotesUseCase
+import com.nicenotes.domain.usecase.GetNoteByIdUseCase
 import com.nicenotes.domain.usecase.ReorderNotesUseCase
 import com.nicenotes.domain.usecase.SaveNoteUseCase
 import com.nicenotes.domain.usecase.SearchNotesUseCase
@@ -36,6 +37,7 @@ class MainViewModel @Inject constructor(
     private val deleteNoteUseCase: DeleteNoteUseCase,
     private val archiveNoteUseCase: ArchiveNoteUseCase,
     private val reorderNotesUseCase: ReorderNotesUseCase,
+    private val getNoteByIdUseCase: GetNoteByIdUseCase,
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -105,4 +107,6 @@ class MainViewModel @Inject constructor(
             reorderNotesUseCase(updates)
         }
     }
+
+    suspend fun getNoteById(id: String): NoteEntity? = getNoteByIdUseCase(id)
 }

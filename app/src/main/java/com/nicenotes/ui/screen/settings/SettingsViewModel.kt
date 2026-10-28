@@ -34,12 +34,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // Collect all notes
-                var allNotes = emptyList<com.nicenotes.data.db.entity.NoteEntity>()
-                noteRepository.observeActiveNotes().collect {
-                    allNotes = it
-                    return@collect
-                }
+                val allNotes = noteRepository.getAllNotes()
                 val json = importExportManager.exportToJson(allNotes)
                 _events.send(SettingsEvent.ShareExport(json))
             } catch (e: Exception) {
@@ -54,7 +49,9 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val (notes, skipped) = importExportManager.importFromStream(inputStream)
+                val (notes, skipped) = inputStream.use { stream ->
+                    importExportManager.importFromStream(stream)
+                }
                 noteRepository.upsertAll(notes)
                 _events.send(SettingsEvent.Message("Imported ${notes.size} notes, skipped $skipped invalid records"))
             } catch (e: Exception) {

@@ -54,11 +54,11 @@ class NoteRepository @Inject constructor(
     }
 
     suspend fun updatePositions(updates: List<Pair<String, Long>>) {
-        updates.forEach { (id, pos) ->
-            dao.getById(id)?.let { dao.update(it.copy(position = pos)) }
-        }
+        dao.updatePositions(updates)
         triggerWidgetUpdate()
     }
+
+    suspend fun getAllNotes(): List<NoteEntity> = dao.getAllNotes()
 
     suspend fun nextPosition(): Long = (dao.maxPosition() ?: 0L) + 1000L
 

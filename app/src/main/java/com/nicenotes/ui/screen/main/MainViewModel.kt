@@ -12,6 +12,7 @@ import com.nicenotes.domain.usecase.SaveNoteUseCase
 import com.nicenotes.domain.usecase.SearchNotesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,6 +44,7 @@ class MainViewModel @Inject constructor(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     val notes = _searchQuery
         .flatMapLatest { query ->
             if (query.isBlank()) getActiveNotesUseCase()

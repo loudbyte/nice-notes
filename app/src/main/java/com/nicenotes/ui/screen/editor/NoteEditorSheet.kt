@@ -205,7 +205,7 @@ fun NoteEditorSheet(
                 }
             }
 
-            Divider(color = Divider, thickness = 0.5.dp)
+            HorizontalDivider(color = Divider, thickness = 0.5.dp)
             Spacer(modifier = Modifier.height(8.dp))
 
             // Text area
@@ -236,7 +236,7 @@ fun NoteEditorSheet(
             )
 
             Spacer(modifier = Modifier.height(12.dp))
-            Divider(color = Divider, thickness = 0.5.dp)
+            HorizontalDivider(color = Divider, thickness = 0.5.dp)
             Spacer(modifier = Modifier.height(8.dp))
 
             Row(

@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import com.nicenotes.data.db.entity.NoteEntity
 import kotlinx.coroutines.flow.Flow
@@ -57,6 +58,19 @@ interface NoteDao {
 
     @Query("SELECT * FROM notes WHERE mAlarmTime IS NOT NULL AND isArchived = 0")
     suspend fun getAllWithReminders(): List<NoteEntity>
+
+    @Query("SELECT * FROM notes")
+    suspend fun getAllNotes(): List<NoteEntity>
+
+    @Query("UPDATE notes SET position = :position WHERE mLocalId = :id")
+    suspend fun updatePosition(id: String, position: Long)
+
+    @Transaction
+    suspend fun updatePositions(updates: List<Pair<String, Long>>) {
+        updates.forEach { (id, position) ->
+            updatePosition(id, position)
+        }
+    }
 
     @Query("SELECT COUNT(*) FROM notes")
     suspend fun count(): Int

@@ -30,6 +30,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.rememberCoroutineScope
@@ -466,16 +467,31 @@ private fun ReorderableNoteList(
     onReorder: (List<Pair<String, Long>>) -> Unit,
 ) {
     var localNotes by remember(notes) { mutableStateOf(notes) }
+    var pendingUpdates by remember { mutableStateOf<List<Pair<String, Long>>?>(null) }
+    val currentOnReorder by rememberUpdatedState(onReorder)
+    val currentPendingUpdates by rememberUpdatedState(pendingUpdates)
+
+    LaunchedEffect(pendingUpdates) {
+        val updates = pendingUpdates ?: return@LaunchedEffect
+        delay(300L)
+        currentOnReorder(updates)
+        pendingUpdates = null
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            currentPendingUpdates?.let { currentOnReorder(it) }
+        }
+    }
 
     val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
     val reorderState = rememberReorderableLazyListState(lazyListState) { from, to ->
         localNotes = localNotes.toMutableList().apply {
             add(to.index, removeAt(from.index))
         }
-        val updates = localNotes.mapIndexed { index, note ->
+        pendingUpdates = localNotes.mapIndexed { index, note ->
             note.mLocalId to (localNotes.size - index).toLong() * 1000L
         }
-        onReorder(updates)
     }
 
     LazyColumn(

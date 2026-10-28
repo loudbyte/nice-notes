@@ -19,6 +19,7 @@ local.properties
 *.iml
 .idea/
 .vscode/
+.tmp/
 
 # Local signing keys and credentials
 *.jks

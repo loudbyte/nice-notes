@@ -26,6 +26,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -58,6 +60,16 @@ fun NoteEditorSheet(
     val isImportant by viewModel.isImportant.collectAsState()
     val alarmTime by viewModel.alarmTime.collectAsState()
     val context = LocalContext.current
+
+    var editorValue by remember(note) {
+        val initialContent = note?.mContent.orEmpty()
+        mutableStateOf(
+            TextFieldValue(
+                text = initialContent,
+                selection = TextRange(initialContent.length),
+            )
+        )
+    }
 
     var showReminderDialog by remember { mutableStateOf(false) }
 
@@ -214,8 +226,11 @@ fun NoteEditorSheet(
             }
 
             TextField(
-                value = content,
-                onValueChange = viewModel::setContent,
+                value = editorValue,
+                onValueChange = {
+                    editorValue = it
+                    viewModel.setContent(it.text)
+                },
                 placeholder = {
                     Text("Write your note...", color = TextSecondary)
                 },

@@ -10,7 +10,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -55,7 +57,7 @@ fun MainScreen(
     val notes by viewModel.notes.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val isManagementMode by viewModel.isManagementMode.collectAsState()
-    val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val lazyListState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
     val imeInsets = WindowInsets.ime
@@ -349,6 +351,7 @@ fun MainScreen(
             } else {
                 ReorderableNoteList(
                     notes = notes,
+                    lazyListState = lazyListState,
                     isSearchExpanded = isSearchExpanded,
                     onSearchCollapse = ::collapseSearch,
                     onNoteClick = { note ->
@@ -460,6 +463,7 @@ private fun SwipeableNoteList(
 @Composable
 private fun ReorderableNoteList(
     notes: List<Note>,
+    lazyListState: LazyListState,
     isSearchExpanded: Boolean,
     onSearchCollapse: () -> Unit,
     onNoteClick: (Note) -> Unit,
@@ -485,7 +489,6 @@ private fun ReorderableNoteList(
         }
     }
 
-    val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
     val reorderState = rememberReorderableLazyListState(lazyListState) { from, to ->
         localNotes = localNotes.toMutableList().apply {
             add(to.index, removeAt(from.index))

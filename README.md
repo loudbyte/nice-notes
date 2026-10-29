@@ -52,7 +52,7 @@ To run the JVM unit tests:
 
 The Room database is `nicenotes.db`, with the `notes` table defined by `NoteEntity`. Times are represented as epoch milliseconds in Room. Import/export maps these to the legacy timestamp format (`MMM d, yyyy h:mm:ss a`) and wraps NiceNotes exports in a JSON object with a version and export timestamp.
 
-The repository includes [`example-of-data.json`](example-of-data.json), a sample legacy JSON export. The unit test suite checks that it parses as 2,164 notes (1,355 active and 809 archived) and exercises a 50-note export/re-import round trip.
+Legacy JSON import and export are exercised by the unit test suite, including a 50-note export/re-import round trip.
 
 Import and export are exposed from **Settings → Data**. Imported note IDs use Room upsert semantics, so matching IDs overwrite existing records. Review [Feature status and known limitations](#feature-status-and-known-limitations) before relying on in-app export as a backup.
 
@@ -111,6 +111,17 @@ Existing test files:
 - `app/src/test/java/com/nicenotes/data/export/ImportExportTest.kt`
 - `app/src/test/java/com/nicenotes/notification/ReminderSchedulerTest.kt`
 - `app/src/test/java/com/nicenotes/ui/screen/main/ReminderNoteSortingTest.kt`
+
+Test commands:
+
+```powershell
+.\gradlew.bat test
+.\gradlew.bat testDebugUnitTest
+.\gradlew.bat testDebugUnitTest --info
+.\gradlew.bat testDebugUnitTest --rerun-tasks
+```
+
+Test report: `app\build\reports\tests\testDebugUnitTest\index.html`
 
 Verified during this documentation update:
 

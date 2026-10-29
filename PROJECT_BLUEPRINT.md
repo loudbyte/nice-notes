@@ -143,7 +143,7 @@ Current parsing checks are not equivalent to the planned validation: the version
 
 Current test sources:
 
-- `ImportExportTest` checks the included sample data counts and a subset round trip.
+- `ImportExportTest` checks legacy JSON import/export and round-trip behavior.
 - `ReminderSchedulerTest` checks basic daily/weekly/monthly interval conversion, unknown rules, and next occurrence behavior.
 - `NoteMappersTest` verifies all stored entity fields survive a domain-model round trip.
 - `NoteDateFormatsTest` verifies the legacy timestamp format round-trips in the system timezone.

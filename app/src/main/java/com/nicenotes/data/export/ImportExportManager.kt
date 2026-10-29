@@ -85,8 +85,7 @@ class ImportExportManager @Inject constructor() {
     }
 
     private fun importFromLegacyArray(raw: String): Pair<List<Note>, Int> {
-        val legacyJson = Json { ignoreUnknownKeys = true }
-        val legacyNotes = legacyJson.decodeFromString<List<LegacyNote>>(raw)
+        val legacyNotes = json.decodeFromString<List<LegacyNote>>(raw)
         val valid = mutableListOf<Note>()
         var skipped = 0
         for (note in legacyNotes) {

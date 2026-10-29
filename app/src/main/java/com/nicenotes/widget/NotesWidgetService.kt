@@ -14,6 +14,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import java.nio.ByteBuffer
+import java.security.MessageDigest
 
 class NotesWidgetService : RemoteViewsService() {
     override fun onGetViewFactory(intent: Intent): RemoteViewsFactory =
@@ -28,6 +30,7 @@ private class NotesRemoteViewsFactory(
         NotesWidgetEntryPoint::class.java
     ).noteDao()
     private var notes: List<NoteEntity> = emptyList()
+    private var itemIds: List<Long> = emptyList()
 
     override fun onCreate() = Unit
 
@@ -35,10 +38,12 @@ private class NotesRemoteViewsFactory(
         notes = runBlocking(Dispatchers.IO) {
             noteDao.getActiveNotes()
         }
+        itemIds = notes.map { stableWidgetItemId(it.mLocalId) }
     }
 
     override fun onDestroy() {
         notes = emptyList()
+        itemIds = emptyList()
     }
 
     override fun getCount(): Int = notes.size
@@ -61,9 +66,15 @@ private class NotesRemoteViewsFactory(
 
     override fun getViewTypeCount(): Int = 1
 
-    override fun getItemId(position: Int): Long = position.toLong()
+    override fun getItemId(position: Int): Long =
+        itemIds.getOrNull(position) ?: position.toLong()
 
-    override fun hasStableIds(): Boolean = false
+    override fun hasStableIds(): Boolean = true
+}
+
+internal fun stableWidgetItemId(noteId: String): Long {
+    val digest = MessageDigest.getInstance("SHA-256").digest(noteId.toByteArray(Charsets.UTF_8))
+    return ByteBuffer.wrap(digest, 0, Long.SIZE_BYTES).long
 }
 
 @EntryPoint

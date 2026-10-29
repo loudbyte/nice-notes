@@ -1,6 +1,6 @@
 package com.nicenotes.notification
 
-import com.nicenotes.data.db.entity.NoteEntity
+import com.nicenotes.domain.model.Note
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -48,33 +48,33 @@ class ReminderSchedulerTest {
 
     @Test
     fun testNextOccurrenceAdvancesReminderAndResetsRemindedState() {
-        val note = NoteEntity(
-            mLocalId = "note-id",
-            mContent = "Reminder",
-            mCreateTime = 0L,
-            mUpdateTime = 0L,
-            mTimestamp = 0L,
-            mAlarmTime = 1_000L,
-            mRepeatRulePre = "FREQ=DAILY;INTERVAL=1",
+        val note = Note(
+            id = "note-id",
+            content = "Reminder",
+            createdAt = 0L,
+            updatedAt = 0L,
+            timestamp = 0L,
+            alarmTime = 1_000L,
+            repeatRule = "FREQ=DAILY;INTERVAL=1",
             isReminded = true
         )
 
         val next = ReminderScheduler.nextOccurrence(note)
 
         assertNotNull(next)
-        assertEquals(1_000L + TimeUnit.DAYS.toMillis(1), next?.mAlarmTime)
+        assertEquals(1_000L + TimeUnit.DAYS.toMillis(1), next?.alarmTime)
         assertEquals(false, next?.isReminded)
     }
 
     @Test
     fun testNextOccurrenceReturnsNullForNonRepeatingReminder() {
-        val note = NoteEntity(
-            mLocalId = "note-id",
-            mContent = "Reminder",
-            mCreateTime = 0L,
-            mUpdateTime = 0L,
-            mTimestamp = 0L,
-            mAlarmTime = 1_000L
+        val note = Note(
+            id = "note-id",
+            content = "Reminder",
+            createdAt = 0L,
+            updatedAt = 0L,
+            timestamp = 0L,
+            alarmTime = 1_000L
         )
 
         assertNull(ReminderScheduler.nextOccurrence(note))

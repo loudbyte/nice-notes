@@ -6,8 +6,12 @@ import android.widget.RemoteViews
 import android.widget.RemoteViewsService
 import com.nicenotes.MainActivity
 import com.nicenotes.R
-import com.nicenotes.data.db.NoteDatabase
+import com.nicenotes.data.db.NoteDao
 import com.nicenotes.data.db.entity.NoteEntity
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 
@@ -19,7 +23,10 @@ class NotesWidgetService : RemoteViewsService() {
 private class NotesRemoteViewsFactory(
     private val context: Context
 ) : RemoteViewsService.RemoteViewsFactory {
-    private val noteDao = NoteDatabase.getInstance(context).noteDao()
+    private val noteDao = EntryPointAccessors.fromApplication(
+        context,
+        NotesWidgetEntryPoint::class.java
+    ).noteDao()
     private var notes: List<NoteEntity> = emptyList()
 
     override fun onCreate() = Unit
@@ -57,4 +64,10 @@ private class NotesRemoteViewsFactory(
     override fun getItemId(position: Int): Long = position.toLong()
 
     override fun hasStableIds(): Boolean = false
+}
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface NotesWidgetEntryPoint {
+    fun noteDao(): NoteDao
 }

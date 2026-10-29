@@ -26,15 +26,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nicenotes.data.db.entity.NoteEntity
+import com.nicenotes.domain.model.Note
 import com.nicenotes.ui.theme.*
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.nicenotes.util.NoteDateFormats
 
 @Composable
 fun NoteListItem(
-    note: NoteEntity,
+    note: Note,
     isManagementMode: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
@@ -105,7 +103,7 @@ fun NoteListItem(
                         )
                     }
                     Text(
-                        text = note.mContent,
+                        text = note.content,
                         style = MaterialTheme.typography.bodyMedium.copy(
                             color = TextPrimary,
                             fontWeight = FontWeight.Normal
@@ -121,7 +119,7 @@ fun NoteListItem(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (note.mAlarmTime != null) {
+                    if (note.alarmTime != null) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -133,7 +131,7 @@ fun NoteListItem(
                                 modifier = Modifier.size(12.dp)
                             )
                             Text(
-                                text = formatTime(note.mAlarmTime),
+                                text = NoteDateFormats.formatNoteDateTime(note.alarmTime),
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     color = ReminderBlue,
                                     fontSize = 11.sp
@@ -145,7 +143,7 @@ fun NoteListItem(
                     }
 
                     Text(
-                        text = formatDate(note.mUpdateTime),
+                        text = NoteDateFormats.formatNoteDate(note.updatedAt),
                         style = MaterialTheme.typography.labelSmall.copy(
                             color = TextSecondary,
                             fontSize = 11.sp
@@ -167,9 +165,3 @@ fun NoteListItem(
         }
     }
 }
-
-private val dateFormat = SimpleDateFormat("MMM d", Locale.ENGLISH)
-private val timeFormat = SimpleDateFormat("MMM d, h:mm a", Locale.ENGLISH)
-
-private fun formatDate(epochMs: Long): String = dateFormat.format(Date(epochMs))
-private fun formatTime(epochMs: Long): String = timeFormat.format(Date(epochMs))

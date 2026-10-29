@@ -1,8 +1,8 @@
 package com.nicenotes.data.export
 
 import kotlinx.serialization.Serializable
-import java.text.SimpleDateFormat
-import com.nicenotes.data.db.entity.NoteEntity
+import com.nicenotes.domain.model.Note
+import com.nicenotes.util.NoteDateFormats
 
 /**
  * Data class for deserializing the legacy bare-array JSON format
@@ -38,35 +38,34 @@ data class LegacyExtra(
     val repeatRule: String = "",
 )
 
-fun LegacyNote.toEntity(fmt: SimpleDateFormat): NoteEntity {
+fun LegacyNote.toDomainNote(): Note {
     fun parseTime(s: String?): Long? = s?.let {
-        try { fmt.parse(it)?.time } catch (e: Exception) { null }
+        NoteDateFormats.parseLegacyTimestamp(it)
     }
 
     val now = System.currentTimeMillis()
-    return NoteEntity(
-        mLocalId = mLocalId,
-        mGlobalId = mGlobalId,
-        mContent = mContent,
-        mStatus = mStatus,
-        mCreateTime = parseTime(mCreateTime) ?: now,
-        mUpdateTime = parseTime(mUpdateTime) ?: now,
-        mTimestamp = parseTime(mTimestamp) ?: now,
-        mFinishTime = parseTime(mFinishTime),
-        mIsDelete = mIsDelete,
-        mIsLocal = mIsLocal,
-        mAlarmTime = parseTime(mAlarmTime),
-        mAlarmTimePre = parseTime(mAlarmTimePre),
-        mNextAlarmTime = parseTime(mNextAlarmTime),
-        mRepeatRulePre = mRepeatRulePre,
-        mForceReminderPre = mForceReminderPre,
+    return Note(
+        id = mLocalId,
+        globalId = mGlobalId,
+        content = mContent,
+        status = mStatus,
+        createdAt = parseTime(mCreateTime) ?: now,
+        updatedAt = parseTime(mUpdateTime) ?: now,
+        timestamp = parseTime(mTimestamp) ?: now,
+        finishedAt = parseTime(mFinishTime),
+        isDeleted = mIsDelete,
+        isLocal = mIsLocal,
+        alarmTime = parseTime(mAlarmTime),
+        previousAlarmTime = parseTime(mAlarmTimePre),
+        nextAlarmTime = parseTime(mNextAlarmTime),
+        repeatRule = mRepeatRulePre,
+        forceReminder = mForceReminderPre,
         isReminded = isReminded,
-        mColorIndex = mColorIndex,
-        mParentId = mParentId,
-        mSysVersion = mSysVersion,
-        mExtraForceReminder = mExtra?.forceReminder ?: false,
-        mExtraRepeatRule = mExtra?.repeatRule ?: "",
-        // Map mIsDelete → isArchived per plan
+        colorIndex = mColorIndex,
+        parentId = mParentId,
+        systemVersion = mSysVersion,
+        extraForceReminder = mExtra?.forceReminder ?: false,
+        extraRepeatRule = mExtra?.repeatRule ?: "",
         isArchived = mIsDelete,
         position = parseTime(mUpdateTime) ?: now,
     )

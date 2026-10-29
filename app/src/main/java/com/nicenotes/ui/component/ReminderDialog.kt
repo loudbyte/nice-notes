@@ -8,6 +8,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.nicenotes.ui.theme.*
+import com.nicenotes.util.NoteDateFormats
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -104,8 +105,7 @@ fun ReminderDialog(
                 ) {
                     Text(
                         if (selectedTime != null)
-                            java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.ENGLISH)
-                                .format(java.util.Date(selectedTime!!))
+                            NoteDateFormats.formatDate(selectedTime!!)
                         else "Pick date"
                     )
                 }
@@ -119,8 +119,7 @@ fun ReminderDialog(
                 ) {
                     Text(
                         if (selectedTime != null)
-                            java.text.SimpleDateFormat("h:mm a", java.util.Locale.ENGLISH)
-                                .format(java.util.Date(selectedTime!!))
+                            NoteDateFormats.formatTime(selectedTime!!)
                         else "Pick time"
                     )
                 }

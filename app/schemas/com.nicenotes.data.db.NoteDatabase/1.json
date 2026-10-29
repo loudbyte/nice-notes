@@ -1,0 +1,169 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "c3d7e2b0495112ee1dd09e1e0d3c69df",
+    "entities": [
+      {
+        "tableName": "notes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`mLocalId` TEXT NOT NULL, `mGlobalId` TEXT, `mContent` TEXT NOT NULL, `mStatus` TEXT NOT NULL, `mCreateTime` INTEGER NOT NULL, `mUpdateTime` INTEGER NOT NULL, `mTimestamp` INTEGER NOT NULL, `mFinishTime` INTEGER, `mIsDelete` INTEGER NOT NULL, `mIsLocal` INTEGER NOT NULL, `mAlarmTime` INTEGER, `mAlarmTimePre` INTEGER, `mNextAlarmTime` INTEGER, `mRepeatRulePre` TEXT NOT NULL, `mForceReminderPre` INTEGER NOT NULL, `isReminded` INTEGER NOT NULL, `mColorIndex` INTEGER NOT NULL, `mParentId` TEXT, `mSysVersion` INTEGER NOT NULL, `mExtraForceReminder` INTEGER NOT NULL, `mExtraRepeatRule` TEXT NOT NULL, `isPinned` INTEGER NOT NULL, `isImportant` INTEGER NOT NULL, `isArchived` INTEGER NOT NULL, `position` INTEGER NOT NULL, PRIMARY KEY(`mLocalId`))",
+        "fields": [
+          {
+            "fieldPath": "mLocalId",
+            "columnName": "mLocalId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mGlobalId",
+            "columnName": "mGlobalId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "mContent",
+            "columnName": "mContent",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mStatus",
+            "columnName": "mStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mCreateTime",
+            "columnName": "mCreateTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mUpdateTime",
+            "columnName": "mUpdateTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mTimestamp",
+            "columnName": "mTimestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mFinishTime",
+            "columnName": "mFinishTime",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "mIsDelete",
+            "columnName": "mIsDelete",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mIsLocal",
+            "columnName": "mIsLocal",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mAlarmTime",
+            "columnName": "mAlarmTime",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "mAlarmTimePre",
+            "columnName": "mAlarmTimePre",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "mNextAlarmTime",
+            "columnName": "mNextAlarmTime",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "mRepeatRulePre",
+            "columnName": "mRepeatRulePre",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mForceReminderPre",
+            "columnName": "mForceReminderPre",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isReminded",
+            "columnName": "isReminded",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mColorIndex",
+            "columnName": "mColorIndex",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mParentId",
+            "columnName": "mParentId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "mSysVersion",
+            "columnName": "mSysVersion",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mExtraForceReminder",
+            "columnName": "mExtraForceReminder",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mExtraRepeatRule",
+            "columnName": "mExtraRepeatRule",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isPinned",
+            "columnName": "isPinned",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isImportant",
+            "columnName": "isImportant",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isArchived",
+            "columnName": "isArchived",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "mLocalId"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c3d7e2b0495112ee1dd09e1e0d3c69df')"
+    ]
+  }
+}

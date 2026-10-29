@@ -35,9 +35,9 @@ import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.nicenotes.data.db.entity.NoteEntity
-import com.nicenotes.ui.Screen
+import com.nicenotes.domain.model.Note
 import com.nicenotes.ui.screen.editor.NoteEditorSheet
+import com.nicenotes.ui.common.UiEvent
 import com.nicenotes.ui.theme.*
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -45,7 +45,8 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun MainScreen(
-    onNavigate: (String) -> Unit,
+    onNavigateToArchive: () -> Unit,
+    onNavigateToSettings: () -> Unit,
     openNoteId: String? = null,
     openNoteRequestId: Long = 0,
     createNoteRequestId: Long? = null,
@@ -70,13 +71,13 @@ fun MainScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     var showEditorSheet by remember { mutableStateOf(false) }
-    var editingNote by remember { mutableStateOf<NoteEntity?>(null) }
+    var editingNote by remember { mutableStateOf<Note?>(null) }
     var pendingCreatedNoteId by remember { mutableStateOf<String?>(null) }
     var showDropdown by remember { mutableStateOf(false) }
 
     LaunchedEffect(notes, pendingCreatedNoteId) {
         val createdNoteId = pendingCreatedNoteId
-        if (createdNoteId != null && notes.any { it.mLocalId == createdNoteId }) {
+        if (createdNoteId != null && notes.any { it.id == createdNoteId }) {
             lazyListState.animateScrollToItem(0)
             pendingCreatedNoteId = null
         }
@@ -304,7 +305,7 @@ fun MainScreen(
                             },
                             onClick = {
                                 showDropdown = false
-                                onNavigate(Screen.Archive.route)
+                                onNavigateToArchive()
                             }
                         )
                         DropdownMenuItem(
@@ -314,7 +315,7 @@ fun MainScreen(
                             },
                             onClick = {
                                 showDropdown = false
-                                onNavigate(Screen.Settings.route)
+                                onNavigateToSettings()
                             }
                         )
                     }
@@ -382,7 +383,7 @@ fun MainScreen(
             },
             onSaved = { savedNote ->
                 if (editingNote == null) {
-                    pendingCreatedNoteId = savedNote.mLocalId
+                    pendingCreatedNoteId = savedNote.id
                 }
             }
         )
@@ -392,13 +393,13 @@ fun MainScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SwipeableNoteList(
-    notes: List<NoteEntity>,
+    notes: List<Note>,
     lazyListState: androidx.compose.foundation.lazy.LazyListState,
     isSearchExpanded: Boolean,
     onSearchCollapse: () -> Unit,
-    onNoteClick: (NoteEntity) -> Unit,
-    onNoteLongClick: (NoteEntity) -> Unit,
-    onNoteArchive: (NoteEntity) -> Unit,
+    onNoteClick: (Note) -> Unit,
+    onNoteLongClick: (Note) -> Unit,
+    onNoteArchive: (Note) -> Unit,
 ) {
     LazyColumn(
         state = lazyListState,
@@ -412,7 +413,7 @@ private fun SwipeableNoteList(
     ) {
         items(
             items = notes,
-            key = { it.mLocalId }
+            key = { it.id }
         ) { note ->
             val dismissState = rememberSwipeToDismissBoxState(
                 confirmValueChange = { value ->
@@ -458,12 +459,12 @@ private fun SwipeableNoteList(
 
 @Composable
 private fun ReorderableNoteList(
-    notes: List<NoteEntity>,
+    notes: List<Note>,
     isSearchExpanded: Boolean,
     onSearchCollapse: () -> Unit,
-    onNoteClick: (NoteEntity) -> Unit,
-    onNoteLongClick: (NoteEntity) -> Unit,
-    onNoteDelete: (NoteEntity) -> Unit,
+    onNoteClick: (Note) -> Unit,
+    onNoteLongClick: (Note) -> Unit,
+    onNoteDelete: (Note) -> Unit,
     onReorder: (List<Pair<String, Long>>) -> Unit,
 ) {
     var localNotes by remember(notes) { mutableStateOf(notes) }
@@ -490,7 +491,7 @@ private fun ReorderableNoteList(
             add(to.index, removeAt(from.index))
         }
         pendingUpdates = localNotes.mapIndexed { index, note ->
-            note.mLocalId to (localNotes.size - index).toLong() * 1000L
+            note.id to (localNotes.size - index).toLong() * 1000L
         }
     }
 
@@ -506,9 +507,9 @@ private fun ReorderableNoteList(
     ) {
         items(
             items = localNotes,
-            key = { it.mLocalId }
+            key = { it.id }
         ) { note ->
-            ReorderableItem(reorderState, key = note.mLocalId) { isDragging ->
+            ReorderableItem(reorderState, key = note.id) { isDragging ->
                 NoteListItem(
                     note = note,
                     isManagementMode = true,

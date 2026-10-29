@@ -33,9 +33,9 @@ This document serves as the comprehensive architectural blueprint and system ref
 | Concern | Current implementation |
 |---|---|
 | Language/UI | Kotlin, Jetpack Compose, Material 3, Java 17 |
-| Architecture | Compose screens/ViewModels → use cases → repository → Room DAO |
-| Dependency injection | Hilt |
-| Persistence | Room, one `notes` table, schema version 1 |
+| Architecture | Compose screens/ViewModels → use cases → domain `Note` → repository mapping → Room DAO/entities |
+| Dependency injection | Hilt; widget service accesses the singleton database through a Hilt entry point |
+| Persistence | Room, one `notes` table, schema version 1, exported schema snapshots |
 | Background work | AlarmManager exact reminders with WorkManager/Hilt fallback |
 | Notifications | Android notification channel and notification intents |
 | Widget | Android AppWidget `RemoteViews` collection |
@@ -72,13 +72,15 @@ flowchart TD
     SettingsVM --> IE[ImportExportManager]
 ```
 
+Room schema snapshots are generated under `app/schemas/`; the schema remains version 1 because the domain model is not persisted.
+
 ### Runtime entry points
 
 - `NiceNotesApp` enables Hilt and configures WorkManager with `HiltWorkerFactory`; it creates the reminder notification channel at application startup.
-- `MainActivity` hosts the Navigation Compose graph for Main, Archive, and Settings.
+- `MainActivity` hosts the type-safe Navigation Compose graph for Main, Archive, and Settings using serializable route objects.
 - `BootCompletedReceiver` re-schedules active reminders after device boot, app updates, and exact-alarm access grants.
 - `ReminderReceiver` delivers exact alarms; WorkManager runs the best-effort fallback when exact-alarm access is unavailable.
-- `NotesWidgetReceiver` supplies the native widget layout; `NotesWidgetService` provides its Room-backed list rows, and the receiver exposes a repository-triggered collection refresh helper.
+- `NotesWidgetReceiver` supplies the native widget layout; `NotesWidgetService` reads rows from the Hilt-provided database, and the receiver exposes a repository-triggered collection refresh helper.
 - `FileProvider` shares a cached JSON backup from Settings.
 
 ### Data ownership and flows
@@ -86,7 +88,7 @@ flowchart TD
 - The Room database is the persistent source of truth.
 - `NoteDao` exposes active and archived note flows; active rows are ordered pinned-first and then by descending `position`.
 - `NoteRepository` delegates persistence, supports reminder lookups, and triggers widget refreshes after several writes.
-- Use cases expose discrete note actions to ViewModels. The domain currently uses `NoteEntity` directly rather than separate domain models.
+- Use cases expose discrete note actions using the domain `Note` model. `NoteRepository` maps between that model and Room's `NoteEntity`; import/export and widget code stay at their data boundaries.
 - Screens collect ViewModel state and invoke user actions; the Main screen and Archive screen each handle snackbar events.
 
 ## 5. Data model
@@ -116,8 +118,9 @@ Current parsing checks are not equivalent to the planned validation: the version
 
 | Subsystem / Area | Implemented behavior | Current limitations and known issues |
 |---|---|---|
-| Setup/dependencies | Compose, Room, Hilt, Navigation, WorkManager, Android RemoteViews, serialization, and reorderable dependencies are configured targeting Java 17 bytecode. | Legacy storage and unused foreground service permissions removed. |
-| Theme | Always-dark palette and Material 3 theme are implemented. | Inter downloadable font is absent. |
+| Setup/dependencies | Compose, Room, Hilt, type-safe Navigation, WorkManager, Android RemoteViews, serialization, and reorderable dependencies are configured targeting Java 17 bytecode. Room schema export is enabled and release builds use R8. | Legacy storage and unused foreground service permissions removed. |
+| Domain/data boundary | ViewModels and use cases operate on domain `Note`; the repository owns entity mapping while DAO/Room remain persistence-specific. | Domain/entity mapping has focused unit coverage; DAO integration tests are still absent. |
+| Theme | Always-dark palette and Material 3 theme are implemented directly without loading dynamic palettes. | Inter downloadable font is absent. |
 | CRUD/list/search | Room-backed create/edit, blank-note guard, search flow, pin and important controls. | No dedicated DAO tests. |
 | Archive | Main-list swipe archives, Archive screen swipe-to-unarchive (right) and swipe-to-delete (left) are implemented with snackbar undo. | Archive bulk management mode is absent. |
 | Reordering | Management mode uses the reorderable Compose library and writes updated positions. | No UI test covers reorder behavior. |
@@ -141,14 +144,17 @@ Current parsing checks are not equivalent to the planned validation: the version
 Current test sources:
 
 - `ImportExportTest` checks the included sample data counts and a subset round trip.
-- `ReminderSchedulerTest` checks basic daily, weekly, monthly interval conversion and unknown rules.
+- `ReminderSchedulerTest` checks basic daily/weekly/monthly interval conversion, unknown rules, and next occurrence behavior.
+- `NoteMappersTest` verifies all stored entity fields survive a domain-model round trip.
+- `NoteDateFormatsTest` verifies the legacy timestamp format round-trips in the system timezone.
 
 Automated coverage currently lacks DAO tests against in-memory Room and Compose UI tests for main-list, editor, archive, undo, search, and widget interactions. Those tests are not present in `app/src/test` or `app/src/androidTest` based on the current source tree.
 
-Verification during this documentation update:
+Verification for the architecture modernization:
 
-- `.\gradlew.bat :app:testDebugUnitTest --rerun-tasks` — **BUILD SUCCESSFUL**.
-- Kotlin compile warnings: deprecated `Divider`, deprecated `Icons.Filled.ArrowBack`, and missing `ExperimentalCoroutinesApi` opt-in on `flatMapLatest`.
+- `.\gradlew.bat :app:testDebugUnitTest` — **BUILD SUCCESSFUL**.
+- `.\gradlew.bat :app:assembleDebug :app:assembleRelease` — **BUILD SUCCESSFUL**, including R8 minification.
+- R8 reports a Kotlin metadata parsing warning with the current Kotlin/R8 versions; the release APK is still produced successfully.
 
 This verification establishes compilation and passing configured JVM tests; it does not verify the app's interactive behavior on a device.
 
@@ -169,21 +175,26 @@ app/src/main/java/com/nicenotes/
 ├── data/
 │   ├── db/
 │   │   ├── entity/          NoteEntity
+│   │   ├── NoteMappers.kt   Room/domain conversions
 │   │   ├── NoteDao.kt
 │   │   └── NoteDatabase.kt
 │   ├── export/              ExportSchema (ExportRoot/ExportNote), LegacyNote, ImportExportManager
 │   └── repository/          NoteRepository
 ├── di/                      DatabaseModule, NotificationModule
-├── domain/usecase/          UseCases (CRUD, archive, reorder, note lookup)
+├── domain/
+│   ├── model/               Note
+│   └── usecase/             UseCases (CRUD, archive, reorder, note lookup)
 ├── notification/            ReminderScheduler, exact receiver, WorkManager fallback, delivery, notifications, boot receiver
 ├── ui/
 │   ├── Screen.kt            Navigation route definitions
+│   ├── common/              Shared UI events
 │   ├── component/           ReminderDialog
 │   ├── screen/main/         Active notes, search, management mode, editor entry
 │   ├── screen/editor/       Note editor sheet and ViewModel
 │   ├── screen/archive/      Archived notes and ViewModel
 │   ├── screen/settings/     Import/export and settings
 │   └── theme/               Colors, typography, Material theme
+├── util/                    Immutable java.time note date formatters
 ├── widget/                  RemoteViews widget provider and collection service
 ├── MainActivity.kt
 └── NiceNotesApp.kt

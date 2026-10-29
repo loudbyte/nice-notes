@@ -2,7 +2,7 @@ package com.nicenotes.ui.screen.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nicenotes.data.db.entity.NoteEntity
+import com.nicenotes.domain.model.Note
 import com.nicenotes.domain.usecase.ArchiveNoteUseCase
 import com.nicenotes.domain.usecase.DeleteNoteUseCase
 import com.nicenotes.domain.usecase.GetActiveNotesUseCase
@@ -10,6 +10,7 @@ import com.nicenotes.domain.usecase.GetNoteByIdUseCase
 import com.nicenotes.domain.usecase.ReorderNotesUseCase
 import com.nicenotes.domain.usecase.SaveNoteUseCase
 import com.nicenotes.domain.usecase.SearchNotesUseCase
+import com.nicenotes.ui.common.UiEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -21,14 +22,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-sealed class UiEvent {
-    data class ShowSnackbar(
-        val message: String,
-        val action: String?,
-        val onAction: () -> Unit
-    ) : UiEvent()
-}
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -70,7 +63,7 @@ class MainViewModel @Inject constructor(
         _isManagementMode.value = false
     }
 
-    fun archiveNote(note: NoteEntity) {
+    fun archiveNote(note: Note) {
         viewModelScope.launch {
             archiveNoteUseCase(note)
             _events.send(UiEvent.ShowSnackbar(
@@ -81,7 +74,7 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun deleteNote(note: NoteEntity) {
+    fun deleteNote(note: Note) {
         viewModelScope.launch {
             deleteNoteUseCase(note)
             _events.send(UiEvent.ShowSnackbar(
@@ -92,13 +85,13 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    private fun unarchiveNote(note: NoteEntity) {
+    private fun unarchiveNote(note: Note) {
         viewModelScope.launch {
-            saveNoteUseCase(note.copy(isArchived = false, mIsDelete = false))
+            saveNoteUseCase(note.copy(isArchived = false, isDeleted = false))
         }
     }
 
-    private fun restoreNote(note: NoteEntity) {
+    private fun restoreNote(note: Note) {
         viewModelScope.launch {
             saveNoteUseCase(note)
         }
@@ -110,5 +103,5 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    suspend fun getNoteById(id: String): NoteEntity? = getNoteByIdUseCase(id)
+    suspend fun getNoteById(id: String): Note? = getNoteByIdUseCase(id)
 }

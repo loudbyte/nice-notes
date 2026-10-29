@@ -1,7 +1,12 @@
 package com.nicenotes.ui
 
-sealed class Screen(val route: String) {
-    object Main     : Screen("main")
-    object Archive  : Screen("archive")
-    object Settings : Screen("settings")
-}
+import kotlinx.serialization.Serializable
+
+@Serializable
+data object MainRoute
+
+@Serializable
+data object ArchiveRoute
+
+@Serializable
+data object SettingsRoute

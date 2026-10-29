@@ -18,7 +18,11 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): NoteDatabase {
-        return NoteDatabase.getInstance(context)
+        return Room.databaseBuilder(
+            context,
+            NoteDatabase::class.java,
+            NoteDatabase.DATABASE_NAME
+        ).build()
     }
 
     @Provides

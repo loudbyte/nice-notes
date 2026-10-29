@@ -1,10 +1,13 @@
 package com.nicenotes.ui.screen.settings
 
+import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nicenotes.data.export.ImportExportManager
 import com.nicenotes.data.repository.NoteRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,13 +18,14 @@ import javax.inject.Inject
 
 sealed class SettingsEvent {
     data class Message(val text: String) : SettingsEvent()
-    data class ShareExport(val jsonContent: String) : SettingsEvent()
+    data class ShareExport(val intent: Intent) : SettingsEvent()
 }
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val noteRepository: NoteRepository,
     private val importExportManager: ImportExportManager,
+    @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _events = Channel<SettingsEvent>()
@@ -36,7 +40,9 @@ class SettingsViewModel @Inject constructor(
             try {
                 val allNotes = noteRepository.getAllNotes()
                 val json = importExportManager.exportToJson(allNotes)
-                _events.send(SettingsEvent.ShareExport(json))
+                _events.send(
+                    SettingsEvent.ShareExport(importExportManager.createShareIntent(context, json))
+                )
             } catch (e: Exception) {
                 _events.send(SettingsEvent.Message("Export failed: ${e.message}"))
             } finally {

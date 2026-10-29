@@ -4,25 +4,19 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
-import com.nicenotes.data.db.entity.NoteEntity
+import com.nicenotes.domain.model.Note
+import com.nicenotes.util.NoteDateFormats
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.InputStream
-import java.text.SimpleDateFormat
 import java.time.Instant
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Date
-import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class ImportExportManager @Inject constructor() {
-
-    private val legacyFormat = SimpleDateFormat("MMM d, yyyy h:mm:ss a", Locale.ENGLISH)
-    private val exportDateFormat = SimpleDateFormat("MMM d, yyyy h:mm:ss a", Locale.ENGLISH)
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -30,7 +24,7 @@ class ImportExportManager @Inject constructor() {
         prettyPrint = false
     }
 
-    fun exportToJson(notes: List<NoteEntity>): String {
+    fun exportToJson(notes: List<Note>): String {
         val now = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
         val exportNotes = notes.map { it.toExportNote() }
         val root = ExportRoot(version = 1, exportedAt = now, notes = exportNotes)
@@ -38,7 +32,7 @@ class ImportExportManager @Inject constructor() {
     }
 
     fun createShareIntent(context: Context, jsonContent: String): Intent {
-        val dateStr = SimpleDateFormat("yyyyMMdd", Locale.ENGLISH).format(Date())
+        val dateStr = NoteDateFormats.formatBackupFileDate(System.currentTimeMillis())
         val fileName = "nicenotes_backup_$dateStr.json"
         val file = File(context.cacheDir, fileName)
         file.writeText(jsonContent)
@@ -61,7 +55,7 @@ class ImportExportManager @Inject constructor() {
      * or from NiceNotes ExportRoot format.
      * Returns Pair<imported, skipped>
      */
-    fun importFromStream(inputStream: InputStream): Pair<List<NoteEntity>, Int> {
+    fun importFromStream(inputStream: InputStream): Pair<List<Note>, Int> {
         val raw = inputStream.bufferedReader().readText()
         return try {
             // Try NiceNotes format first
@@ -76,24 +70,24 @@ class ImportExportManager @Inject constructor() {
         }
     }
 
-    private fun importFromExportRoot(raw: String): Pair<List<NoteEntity>, Int> {
+    private fun importFromExportRoot(raw: String): Pair<List<Note>, Int> {
         val root = json.decodeFromString<ExportRoot>(raw)
-        val valid = mutableListOf<NoteEntity>()
+        val valid = mutableListOf<Note>()
         var skipped = 0
         for (note in root.notes) {
             if (note.mLocalId.isBlank()) {
                 skipped++
                 continue
             }
-            valid.add(note.toEntity())
+            valid.add(note.toDomainNote())
         }
         return Pair(valid, skipped)
     }
 
-    private fun importFromLegacyArray(raw: String): Pair<List<NoteEntity>, Int> {
+    private fun importFromLegacyArray(raw: String): Pair<List<Note>, Int> {
         val legacyJson = Json { ignoreUnknownKeys = true }
         val legacyNotes = legacyJson.decodeFromString<List<LegacyNote>>(raw)
-        val valid = mutableListOf<NoteEntity>()
+        val valid = mutableListOf<Note>()
         var skipped = 0
         for (note in legacyNotes) {
             if (note.mLocalId.isBlank()) {
@@ -101,7 +95,7 @@ class ImportExportManager @Inject constructor() {
                 continue
             }
             try {
-                valid.add(note.toEntity(legacyFormat))
+                valid.add(note.toDomainNote())
             } catch (e: Exception) {
                 skipped++
             }
@@ -109,28 +103,28 @@ class ImportExportManager @Inject constructor() {
         return Pair(valid, skipped)
     }
 
-    private fun NoteEntity.toExportNote(): ExportNote {
+    private fun Note.toExportNote(): ExportNote {
         return ExportNote(
-            mLocalId = mLocalId,
-            mGlobalId = mGlobalId,
-            mContent = mContent,
-            mStatus = mStatus,
-            mCreateTime = exportDateFormat.format(Date(mCreateTime)),
-            mUpdateTime = exportDateFormat.format(Date(mUpdateTime)),
-            mTimestamp = exportDateFormat.format(Date(mTimestamp)),
-            mFinishTime = mFinishTime?.let { exportDateFormat.format(Date(it)) },
-            mIsDelete = mIsDelete,
-            mIsLocal = mIsLocal,
-            mAlarmTime = mAlarmTime?.let { exportDateFormat.format(Date(it)) },
-            mAlarmTimePre = mAlarmTimePre?.let { exportDateFormat.format(Date(it)) },
-            mNextAlarmTime = mNextAlarmTime?.let { exportDateFormat.format(Date(it)) },
-            mRepeatRulePre = mRepeatRulePre,
-            mForceReminderPre = mForceReminderPre,
+            mLocalId = id,
+            mGlobalId = globalId,
+            mContent = content,
+            mStatus = status,
+            mCreateTime = NoteDateFormats.formatLegacyTimestamp(createdAt),
+            mUpdateTime = NoteDateFormats.formatLegacyTimestamp(updatedAt),
+            mTimestamp = NoteDateFormats.formatLegacyTimestamp(timestamp),
+            mFinishTime = finishedAt?.let(NoteDateFormats::formatLegacyTimestamp),
+            mIsDelete = isDeleted,
+            mIsLocal = isLocal,
+            mAlarmTime = alarmTime?.let(NoteDateFormats::formatLegacyTimestamp),
+            mAlarmTimePre = previousAlarmTime?.let(NoteDateFormats::formatLegacyTimestamp),
+            mNextAlarmTime = nextAlarmTime?.let(NoteDateFormats::formatLegacyTimestamp),
+            mRepeatRulePre = repeatRule,
+            mForceReminderPre = forceReminder,
             isReminded = isReminded,
-            mColorIndex = mColorIndex,
-            mParentId = mParentId,
-            mSysVersion = mSysVersion,
-            mExtra = ExportExtra(forceReminder = mExtraForceReminder, repeatRule = mExtraRepeatRule),
+            mColorIndex = colorIndex,
+            mParentId = parentId,
+            mSysVersion = systemVersion,
+            mExtra = ExportExtra(forceReminder = extraForceReminder, repeatRule = extraRepeatRule),
             isPinned = isPinned,
             isImportant = isImportant,
             isArchived = isArchived,
@@ -138,34 +132,36 @@ class ImportExportManager @Inject constructor() {
         )
     }
 
-    private fun ExportNote.toEntity(): NoteEntity {
-        val fmt = exportDateFormat
-        return NoteEntity(
-            mLocalId = mLocalId,
-            mGlobalId = mGlobalId,
-            mContent = mContent,
-            mStatus = mStatus,
-            mCreateTime = fmt.parse(mCreateTime)?.time ?: System.currentTimeMillis(),
-            mUpdateTime = fmt.parse(mUpdateTime)?.time ?: System.currentTimeMillis(),
-            mTimestamp = fmt.parse(mTimestamp)?.time ?: System.currentTimeMillis(),
-            mFinishTime = mFinishTime?.let { fmt.parse(it)?.time },
-            mIsDelete = mIsDelete,
-            mIsLocal = mIsLocal,
-            mAlarmTime = mAlarmTime?.let { fmt.parse(it)?.time },
-            mAlarmTimePre = mAlarmTimePre?.let { fmt.parse(it)?.time },
-            mNextAlarmTime = mNextAlarmTime?.let { fmt.parse(it)?.time },
-            mRepeatRulePre = mRepeatRulePre,
-            mForceReminderPre = mForceReminderPre,
+    private fun ExportNote.toDomainNote(): Note {
+        fun parseTime(value: String?): Long? =
+            value?.let(NoteDateFormats::parseLegacyTimestamp)
+        val now = System.currentTimeMillis()
+        return Note(
+            id = mLocalId,
+            globalId = mGlobalId,
+            content = mContent,
+            status = mStatus,
+            createdAt = parseTime(mCreateTime) ?: now,
+            updatedAt = parseTime(mUpdateTime) ?: now,
+            timestamp = parseTime(mTimestamp) ?: now,
+            finishedAt = parseTime(mFinishTime),
+            isDeleted = mIsDelete,
+            isLocal = mIsLocal,
+            alarmTime = parseTime(mAlarmTime),
+            previousAlarmTime = parseTime(mAlarmTimePre),
+            nextAlarmTime = parseTime(mNextAlarmTime),
+            repeatRule = mRepeatRulePre,
+            forceReminder = mForceReminderPre,
             isReminded = isReminded,
-            mColorIndex = mColorIndex,
-            mParentId = mParentId,
-            mSysVersion = mSysVersion,
-            mExtraForceReminder = mExtra?.forceReminder ?: false,
-            mExtraRepeatRule = mExtra?.repeatRule ?: "",
+            colorIndex = mColorIndex,
+            parentId = mParentId,
+            systemVersion = mSysVersion,
+            extraForceReminder = mExtra?.forceReminder ?: false,
+            extraRepeatRule = mExtra?.repeatRule ?: "",
             isPinned = isPinned,
             isImportant = isImportant,
             isArchived = isArchived || mIsDelete,
-            position = if (position == 0L) System.currentTimeMillis() else position,
+            position = if (position == 0L) now else position,
         )
     }
 }

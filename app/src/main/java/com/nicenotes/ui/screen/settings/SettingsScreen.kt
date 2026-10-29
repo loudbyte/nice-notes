@@ -15,7 +15,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.nicenotes.data.export.ImportExportManager
 import com.nicenotes.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -28,8 +27,6 @@ fun SettingsScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
-
-    val importExportManager = remember { ImportExportManager() }
 
     val importLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
@@ -47,8 +44,7 @@ fun SettingsScreen(
                     snackbarHostState.showSnackbar(event.text)
                 }
                 is SettingsEvent.ShareExport -> {
-                    val intent = importExportManager.createShareIntent(context, event.jsonContent)
-                    context.startActivity(Intent.createChooser(intent, "Export notes"))
+                    context.startActivity(Intent.createChooser(event.intent, "Export notes"))
                 }
             }
         }

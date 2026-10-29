@@ -10,7 +10,7 @@ import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import com.nicenotes.data.db.entity.NoteEntity
+import com.nicenotes.domain.model.Note
 import java.util.concurrent.TimeUnit
 
 enum class ReminderSchedulingMode {
@@ -24,10 +24,10 @@ object ReminderScheduler {
     fun canScheduleExactAlarms(context: Context): Boolean =
         alarmManager(context).canScheduleExactAlarms()
 
-    fun schedule(context: Context, note: NoteEntity): ReminderSchedulingMode {
-        val alarmTime = note.mAlarmTime
+    fun schedule(context: Context, note: Note): ReminderSchedulingMode {
+        val alarmTime = note.alarmTime
         if (alarmTime == null || !isAlarmTimeInFuture(alarmTime)) {
-            cancel(context, note.mLocalId)
+            cancel(context, note.id)
             return ReminderSchedulingMode.NONE
         }
 
@@ -37,16 +37,16 @@ object ReminderScheduler {
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     alarmTime,
-                    reminderPendingIntent(context, note.mLocalId)
+                    reminderPendingIntent(context, note.id)
                 )
-                WorkManager.getInstance(context).cancelUniqueWork(note.mLocalId)
+                WorkManager.getInstance(context).cancelUniqueWork(note.id)
                 return ReminderSchedulingMode.EXACT
             } catch (exception: SecurityException) {
                 Log.w(TAG, "Exact alarm access was revoked; using best-effort work.", exception)
             }
         }
 
-        enqueueBestEffortWork(context, note.mLocalId, alarmTime)
+        enqueueBestEffortWork(context, note.id, alarmTime)
         return ReminderSchedulingMode.BEST_EFFORT
     }
 
@@ -57,11 +57,11 @@ object ReminderScheduler {
         WorkManager.getInstance(context).cancelUniqueWork(noteId)
     }
 
-    fun nextOccurrence(note: NoteEntity): NoteEntity? {
-        val intervalMs = parseRruleIntervalMs(note.mRepeatRulePre) ?: return null
-        val alarmTime = note.mAlarmTime ?: return null
+    fun nextOccurrence(note: Note): Note? {
+        val intervalMs = parseRruleIntervalMs(note.repeatRule) ?: return null
+        val alarmTime = note.alarmTime ?: return null
         return note.copy(
-            mAlarmTime = alarmTime + intervalMs,
+            alarmTime = alarmTime + intervalMs,
             isReminded = false
         )
     }

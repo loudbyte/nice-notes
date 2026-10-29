@@ -2,8 +2,8 @@ package com.nicenotes.ui.screen.editor
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nicenotes.data.db.entity.NoteEntity
 import com.nicenotes.data.repository.NoteRepository
+import com.nicenotes.domain.model.Note
 import com.nicenotes.domain.usecase.SaveNoteUseCase
 import com.nicenotes.notification.ReminderScheduler
 import com.nicenotes.notification.ReminderSchedulingMode
@@ -20,7 +20,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 class NoteEditorViewModel @Inject constructor(
     private val saveNoteUseCase: SaveNoteUseCase,
     private val noteRepository: NoteRepository,
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _content = MutableStateFlow("")
@@ -38,15 +38,15 @@ class NoteEditorViewModel @Inject constructor(
     private val _repeatRule = MutableStateFlow("")
     val repeatRule = _repeatRule.asStateFlow()
 
-    private var editingNote: NoteEntity? = null
+    private var editingNote: Note? = null
 
-    fun loadNote(note: NoteEntity?) {
+    fun loadNote(note: Note?) {
         editingNote = note
-        _content.value = note?.mContent ?: ""
+        _content.value = note?.content ?: ""
         _isPinned.value = note?.isPinned ?: false
         _isImportant.value = note?.isImportant ?: false
-        _alarmTime.value = note?.mAlarmTime
-        _repeatRule.value = note?.mRepeatRulePre ?: ""
+        _alarmTime.value = note?.alarmTime
+        _repeatRule.value = note?.repeatRule ?: ""
     }
 
     fun setContent(text: String) { _content.value = text }
@@ -57,29 +57,29 @@ class NoteEditorViewModel @Inject constructor(
         _repeatRule.value = rrule
     }
 
-    fun save(onDone: (NoteEntity, ReminderSchedulingMode) -> Unit) {
+    fun save(onDone: (Note, ReminderSchedulingMode) -> Unit) {
         val content = _content.value
         if (content.isBlank()) return
 
         viewModelScope.launch {
             val now = System.currentTimeMillis()
             val note = editingNote?.copy(
-                mContent = content,
-                mUpdateTime = now,
+                content = content,
+                updatedAt = now,
                 isPinned = _isPinned.value,
                 isImportant = _isImportant.value,
-                mAlarmTime = _alarmTime.value,
-                mRepeatRulePre = _repeatRule.value,
-            ) ?: NoteEntity(
-                mLocalId = UUID.randomUUID().toString(),
-                mContent = content,
-                mCreateTime = now,
-                mUpdateTime = now,
-                mTimestamp = now,
+                alarmTime = _alarmTime.value,
+                repeatRule = _repeatRule.value,
+            ) ?: Note(
+                id = UUID.randomUUID().toString(),
+                content = content,
+                createdAt = now,
+                updatedAt = now,
+                timestamp = now,
                 isPinned = _isPinned.value,
                 isImportant = _isImportant.value,
-                mAlarmTime = _alarmTime.value,
-                mRepeatRulePre = _repeatRule.value,
+                alarmTime = _alarmTime.value,
+                repeatRule = _repeatRule.value,
                 position = noteRepository.nextPosition(),
             )
             saveNoteUseCase(note)

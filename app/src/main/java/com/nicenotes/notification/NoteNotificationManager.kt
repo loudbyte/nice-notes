@@ -11,7 +11,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.nicenotes.MainActivity
 import com.nicenotes.R
-import com.nicenotes.data.db.entity.NoteEntity
+import com.nicenotes.domain.model.Note
 
 object NoteNotificationManager {
 
@@ -75,7 +75,7 @@ object NoteNotificationManager {
             putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
         }
 
-    fun showReminder(context: Context, note: NoteEntity): DeliveryStatus {
+    fun showReminder(context: Context, note: Note): DeliveryStatus {
         if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) {
             return DeliveryStatus.APP_NOTIFICATIONS_DISABLED
         }
@@ -89,18 +89,18 @@ object NoteNotificationManager {
 
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra(EXTRA_NOTE_ID, note.mLocalId)
+            putExtra(EXTRA_NOTE_ID, note.id)
         }
         val pendingIntent = PendingIntent.getActivity(
             context,
-            note.mLocalId.hashCode(),
+            note.id.hashCode(),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_note)
-            .setContentTitle(note.mContent)
+            .setContentTitle(note.content)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
@@ -108,7 +108,7 @@ object NoteNotificationManager {
             .build()
 
         return try {
-            notificationManager.notify(note.mLocalId, 0, notification)
+            notificationManager.notify(note.id, 0, notification)
             DeliveryStatus.SHOWN
         } catch (_: SecurityException) {
             DeliveryStatus.APP_NOTIFICATIONS_DISABLED

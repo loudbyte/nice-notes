@@ -14,7 +14,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.nicenotes.ui.Screen
+import com.nicenotes.ui.ArchiveRoute
+import com.nicenotes.ui.MainRoute
+import com.nicenotes.ui.SettingsRoute
 import com.nicenotes.ui.screen.archive.ArchiveScreen
 import com.nicenotes.ui.screen.main.MainScreen
 import com.nicenotes.ui.screen.settings.SettingsScreen
@@ -95,30 +97,29 @@ fun NiceNotesNavGraph(
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Main.route
+        startDestination = MainRoute
     ) {
-        composable(Screen.Main.route) {
+        composable<MainRoute> {
             MainScreen(
-                onNavigate = { route -> navController.navigate(route) },
+                onNavigateToArchive = { navController.navigate(ArchiveRoute) },
+                onNavigateToSettings = { navController.navigate(SettingsRoute) },
                 openNoteId = openNoteId,
                 openNoteRequestId = openNoteRequestId,
                 createNoteRequestId = createNoteRequestId
             )
         }
-        composable(Screen.Archive.route) {
+        composable<ArchiveRoute> {
             ArchiveScreen(onBack = { navController.popBackStack() })
         }
-        composable(Screen.Settings.route) {
+        composable<SettingsRoute> {
             SettingsScreen(onBack = { navController.popBackStack() })
         }
     }
 }
 
 private fun navigateToMain(navController: NavHostController) {
-    val currentRoute = navController.currentDestination?.route ?: return
-    if (currentRoute != Screen.Main.route &&
-        !navController.popBackStack(Screen.Main.route, inclusive = false)) {
-        navController.navigate(Screen.Main.route) {
+    if (!navController.popBackStack<MainRoute>(inclusive = false)) {
+        navController.navigate(MainRoute) {
             launchSingleTop = true
         }
     }

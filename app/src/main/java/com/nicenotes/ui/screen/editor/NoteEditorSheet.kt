@@ -32,23 +32,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.nicenotes.data.db.entity.NoteEntity
+import com.nicenotes.domain.model.Note
 import com.nicenotes.notification.NoteNotificationManager
 import com.nicenotes.notification.ReminderScheduler
 import com.nicenotes.notification.ReminderSchedulingMode
 import com.nicenotes.ui.component.ReminderDialog
 import com.nicenotes.ui.theme.*
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteEditorSheet(
-    note: NoteEntity?,
+    note: Note?,
     onDismiss: () -> Unit,
     onMessage: (String, (() -> Unit)?) -> Unit,
-    onSaved: (NoteEntity) -> Unit = {},
+    onSaved: (Note) -> Unit = {},
     viewModel: NoteEditorViewModel = hiltViewModel()
 ) {
     LaunchedEffect(note) {
@@ -62,7 +59,7 @@ fun NoteEditorSheet(
     val context = LocalContext.current
 
     var editorValue by remember(note) {
-        val initialContent = note?.mContent.orEmpty()
+        val initialContent = note?.content.orEmpty()
         mutableStateOf(
             TextFieldValue(
                 text = initialContent,
@@ -75,7 +72,7 @@ fun NoteEditorSheet(
 
     fun persistNote() {
         viewModel.save { savedNote, schedulingMode ->
-            if (savedNote.mAlarmTime != null) {
+            if (savedNote.alarmTime != null) {
                 val settings = NoteNotificationManager.notificationSettings(context)
                 val issues = buildList {
                     if (!settings.notificationsEnabled) {
@@ -335,6 +332,3 @@ private fun exactAlarmSettingsIntent(context: android.content.Context): Intent =
     Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
         data = Uri.parse("package:${context.packageName}")
     }
-
-private val dtFormat = SimpleDateFormat("MMM d, h:mm a", Locale.ENGLISH)
-private fun formatDateTime(epochMs: Long): String = dtFormat.format(Date(epochMs))

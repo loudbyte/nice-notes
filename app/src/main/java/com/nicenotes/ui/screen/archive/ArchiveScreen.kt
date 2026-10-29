@@ -15,9 +15,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.nicenotes.ui.screen.editor.NoteEditorSheet
 import com.nicenotes.ui.screen.main.NoteListItem
-import com.nicenotes.ui.screen.main.UiEvent
+import com.nicenotes.ui.common.UiEvent
 import com.nicenotes.ui.theme.*
-import com.nicenotes.data.db.entity.NoteEntity
+import com.nicenotes.domain.model.Note
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,7 +29,7 @@ fun ArchiveScreen(
     val notes by viewModel.notes.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
-    var editingNote by remember { mutableStateOf<NoteEntity?>(null) }
+    var editingNote by remember { mutableStateOf<Note?>(null) }
     var showEditor by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -96,7 +96,7 @@ fun ArchiveScreen(
             ) {
                 items(
                     items = notes,
-                    key = { it.mLocalId }
+                    key = { it.id }
                 ) { note ->
                     // Swipe right to unarchive, swipe left to delete
                     val dismissState = rememberSwipeToDismissBoxState(

@@ -16,9 +16,9 @@ class ImportExportTest {
     fun testParseExampleOfDataDataset() {
         // Find example-of-data in root or parent
         val fileCandidates = listOf(
-            File("example-of-data"),
-            File("../example-of-data"),
-            File("../../example-of-data")
+            File("example-of-data.json"),
+            File("../example-of-data.json"),
+            File("../../example-of-data.json")
         )
         val dataFile = fileCandidates.firstOrNull { it.exists() }
         assertNotNull("example-of-data file should exist", dataFile)
@@ -38,20 +38,20 @@ class ImportExportTest {
         assertEquals(1355, activeNotes.size)
 
         // Verify notes with reminders
-        val notesWithReminders = notes.filter { it.mAlarmTime != null }
+        val notesWithReminders = notes.filter { it.alarmTime != null }
         assertTrue("Should have notes with reminders", notesWithReminders.isNotEmpty())
 
         // Verify repeating reminders
-        val repeatingNotes = notes.filter { it.mRepeatRulePre.isNotEmpty() }
+        val repeatingNotes = notes.filter { it.repeatRule.isNotEmpty() }
         assertTrue("Should have notes with repeat rules", repeatingNotes.isNotEmpty())
     }
 
     @Test
     fun testExportAndReImportRoundTrip() {
         val sampleFile = listOf(
-            File("example-of-data"),
-            File("../example-of-data"),
-            File("../../example-of-data")
+            File("example-of-data.json"),
+            File("../example-of-data.json"),
+            File("../../example-of-data.json")
         ).firstOrNull { it.exists() }
         assertNotNull(sampleFile)
 
@@ -69,8 +69,8 @@ class ImportExportTest {
 
         assertEquals(50, reimportedNotes.size)
         assertEquals(0, reimportSkipped)
-        assertEquals(subset[0].mLocalId, reimportedNotes[0].mLocalId)
-        assertEquals(subset[0].mContent, reimportedNotes[0].mContent)
+        assertEquals(subset[0].id, reimportedNotes[0].id)
+        assertEquals(subset[0].content, reimportedNotes[0].content)
         assertEquals(subset[0].isArchived, reimportedNotes[0].isArchived)
     }
 }

@@ -184,10 +184,7 @@ fun ReminderDialog(
                         onConfirm(time, if (repeatEnabled) repeatOption else "")
                     }
                 },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = AccentWhite,
-                    contentColor = Black
-                ),
+                colors = niceNotesPrimaryButtonColors(),
                 enabled = selectedTime != null
             ) { Text("Save") }
         },

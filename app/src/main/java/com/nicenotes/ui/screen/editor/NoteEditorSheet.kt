@@ -298,12 +298,7 @@ fun NoteEditorSheet(
                 Button(
                     onClick = ::saveNote,
                     enabled = content.isNotBlank(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Black,
-                        contentColor = AccentWhite,
-                        disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                        disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-                    ),
+                    colors = niceNotesPrimaryButtonColors(),
                     shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                 ) {

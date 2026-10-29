@@ -20,6 +20,7 @@ local.properties
 .idea/
 .vscode/
 .tmp/
+.kilo/
 
 # Local signing keys and credentials
 *.jks

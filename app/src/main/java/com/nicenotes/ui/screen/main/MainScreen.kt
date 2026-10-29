@@ -31,6 +31,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -222,6 +223,14 @@ fun MainScreen(
                     text = "${notes.size} notes",
                     style = MaterialTheme.typography.labelSmall.copy(color = TextSecondary)
                 )
+                if (isManagementMode) {
+                    Text(
+                        text = "Management mode — drag to reorder, swipe to delete",
+                        style = MaterialTheme.typography.labelSmall.copy(color = TextSecondary),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
 
             // Top bar with search and menu
@@ -322,15 +331,6 @@ fun MainScreen(
                         )
                     }
                 }
-            }
-
-            // Management mode label
-            if (isManagementMode) {
-                Text(
-                    text = "Management mode — drag to reorder",
-                    style = MaterialTheme.typography.labelSmall.copy(color = TextSecondary),
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                )
             }
 
             // Notes list
@@ -453,7 +453,6 @@ private fun SwipeableNoteList(
                     isManagementMode = false,
                     onClick = { onNoteClick(note) },
                     onLongClick = { onNoteLongClick(note) },
-                    onDelete = {},
                 )
             }
         }
@@ -513,24 +512,56 @@ private fun ReorderableNoteList(
             key = { it.id }
         ) { note ->
             ReorderableItem(reorderState, key = note.id) { isDragging ->
-                NoteListItem(
-                    note = note,
-                    isManagementMode = true,
-                    onClick = { onNoteClick(note) },
-                    onLongClick = { onNoteLongClick(note) },
-                    onDelete = { onNoteDelete(note) },
-                    dragHandle = {
-                        Icon(
-                            imageVector = Icons.Default.DragHandle,
-                            contentDescription = "Drag",
-                            tint = TextSecondary,
-                            modifier = Modifier
-                                .draggableHandle()
-                                .size(24.dp)
-                        )
-                    },
-                    modifier = if (isDragging) Modifier.background(SurfaceVariant) else Modifier
+                val dismissState = rememberSwipeToDismissBoxState(
+                    confirmValueChange = { value ->
+                        if (value == SwipeToDismissBoxValue.StartToEnd) {
+                            onNoteDelete(note)
+                            true
+                        } else {
+                            false
+                        }
+                    }
                 )
+
+                SwipeToDismissBox(
+                    state = dismissState,
+                    backgroundContent = {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 12.dp, vertical = 4.dp)
+                                .background(ImportantRed, RoundedCornerShape(12.dp)),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Text(
+                                "Delete",
+                                color = AccentWhite,
+                                modifier = Modifier.padding(start = 16.dp),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    },
+                    enableDismissFromStartToEnd = true,
+                    enableDismissFromEndToStart = false,
+                ) {
+                    NoteListItem(
+                        note = note,
+                        isManagementMode = true,
+                        onClick = { onNoteClick(note) },
+                        onLongClick = { onNoteLongClick(note) },
+                        dragHandle = {
+                            Icon(
+                                imageVector = Icons.Default.DragHandle,
+                                contentDescription = "Drag",
+                                tint = TextSecondary,
+                                modifier = Modifier
+                                    .draggableHandle()
+                                    .size(16.dp)
+                            )
+                        },
+                        modifier = if (isDragging) Modifier.background(SurfaceVariant) else Modifier
+                    )
+                }
             }
         }
     }

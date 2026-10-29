@@ -8,8 +8,6 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material3.*
@@ -20,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nicenotes.domain.model.Note
@@ -32,7 +31,6 @@ fun NoteListItem(
     isManagementMode: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    onDelete: () -> Unit,
     dragHandle: (@Composable () -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -68,13 +66,6 @@ fun NoteListItem(
                 )
         )
 
-        // Drag handle in management mode
-        if (isManagementMode && dragHandle != null) {
-            Box(modifier = Modifier.padding(start = 8.dp)) {
-                dragHandle()
-            }
-        }
-
         // Content
         Column(
             modifier = Modifier
@@ -105,52 +96,89 @@ fun NoteListItem(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (note.alarmTime != null) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.NotificationsActive,
-                            contentDescription = "Reminder",
-                            tint = ReminderBlue,
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Text(
-                            text = NoteDateFormats.formatNoteDateTime(note.alarmTime),
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                color = ReminderBlue,
-                                fontSize = 11.sp
+            if (isManagementMode && dragHandle != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (note.alarmTime != null) {
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.NotificationsActive,
+                                contentDescription = "Reminder",
+                                tint = ReminderBlue,
+                                modifier = Modifier.size(12.dp)
                             )
-                        )
+                            Text(
+                                text = NoteDateFormats.formatNoteDateTime(note.alarmTime),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = ReminderBlue,
+                                    fontSize = 11.sp
+                                ),
+                                maxLines = 1
+                            )
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
                     }
-                } else {
-                    Spacer(modifier = Modifier.width(1.dp))
-                }
-
-                Text(
-                    text = NoteDateFormats.formatNoteDate(note.updatedAt),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        color = TextSecondary,
-                        fontSize = 11.sp
+                    Box(
+                        modifier = Modifier.width(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        dragHandle()
+                    }
+                    Text(
+                        text = NoteDateFormats.formatNoteDate(note.updatedAt),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = TextSecondary,
+                            fontSize = 11.sp
+                        ),
+                        maxLines = 1,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.weight(1f)
                     )
-                )
-            }
-        }
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (note.alarmTime != null) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.NotificationsActive,
+                                contentDescription = "Reminder",
+                                tint = ReminderBlue,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Text(
+                                text = NoteDateFormats.formatNoteDateTime(note.alarmTime),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = ReminderBlue,
+                                    fontSize = 11.sp
+                                )
+                            )
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.width(1.dp))
+                    }
 
-        // Delete button in management mode
-        if (isManagementMode) {
-            IconButton(onClick = onDelete) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = ImportantRed
-                )
+                    Text(
+                        text = NoteDateFormats.formatNoteDate(note.updatedAt),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = TextSecondary,
+                            fontSize = 11.sp
+                        )
+                    )
+                }
             }
         }
     }

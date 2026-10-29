@@ -148,7 +148,6 @@ fun ArchiveScreen(
                                 showEditor = true
                             },
                             onLongClick = {},
-                            onDelete = { viewModel.deleteNote(note) },
                         )
                     }
                 }

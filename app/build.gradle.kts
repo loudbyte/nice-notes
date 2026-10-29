@@ -14,6 +14,16 @@ android {
     namespace = "com.nicenotes"
     compileSdk = 36
 
+    signingConfigs {
+        // Temporary debug keystore for local/personal installs. Replace with a private release keystore before publishing.
+        create("release") {
+            storeFile = file(System.getProperty("user.home") + "/.android/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     defaultConfig {
         applicationId = "com.nicenotes"
         minSdk = 36
@@ -27,6 +37,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt")
             )

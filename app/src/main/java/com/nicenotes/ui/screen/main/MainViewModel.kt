@@ -2,6 +2,7 @@ package com.nicenotes.ui.screen.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nicenotes.data.preferences.NotePreferences
 import com.nicenotes.domain.model.Note
 import com.nicenotes.domain.usecase.ArchiveNoteUseCase
 import com.nicenotes.domain.usecase.DeleteNoteUseCase
@@ -17,6 +18,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -32,17 +34,25 @@ class MainViewModel @Inject constructor(
     private val archiveNoteUseCase: ArchiveNoteUseCase,
     private val reorderNotesUseCase: ReorderNotesUseCase,
     private val getNoteByIdUseCase: GetNoteByIdUseCase,
+    private val notePreferences: NotePreferences,
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
+    private val _remindersFirst = MutableStateFlow(notePreferences.remindersFirst)
+    val remindersFirst = _remindersFirst.asStateFlow()
+
     @OptIn(ExperimentalCoroutinesApi::class)
-    val notes = _searchQuery
+    private val matchingNotes = _searchQuery
         .flatMapLatest { query ->
             if (query.isBlank()) getActiveNotesUseCase()
             else searchNotesUseCase(query)
         }
+
+    val notes = combine(matchingNotes, _remindersFirst) { currentNotes, showRemindersFirst ->
+        if (showRemindersFirst) currentNotes.withRemindersFirst() else currentNotes
+    }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _isManagementMode = MutableStateFlow(false)
@@ -53,6 +63,12 @@ class MainViewModel @Inject constructor(
 
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
+    }
+
+    fun setRemindersFirst(enabled: Boolean) {
+        if (_remindersFirst.value == enabled) return
+        notePreferences.setRemindersFirst(enabled)
+        _remindersFirst.value = enabled
     }
 
     fun toggleManagementMode() {
@@ -104,4 +120,9 @@ class MainViewModel @Inject constructor(
     }
 
     suspend fun getNoteById(id: String): Note? = getNoteByIdUseCase(id)
+}
+
+internal fun List<Note>.withRemindersFirst(): List<Note> {
+    val (notesWithReminders, notesWithoutReminders) = partition { it.alarmTime != null }
+    return notesWithReminders + notesWithoutReminders
 }

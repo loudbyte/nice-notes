@@ -10,6 +10,7 @@ NiceNotes is a dark-themed Android notes app built with Kotlin and Jetpack Compo
 - Search active notes via a collapsible search field (magnifier icon in header).
 - View full note content in the list without truncation.
 - Pin notes, mark them important, and manually reorder them in management mode.
+- Sort notes with reminders first using the persistent “Reminders first” toggle in the main menu; enabled by default and applied to search and management mode.
 - Archive active notes by swiping; browse, unarchive (swipe right), and delete (swipe left) notes from the Archive screen with undo.
 - Set one-time or daily, weekly, and monthly repeating reminders.
 - Receive reminder notifications and tap to open the note directly in the editor.
@@ -67,6 +68,7 @@ app/src/main/java/com/nicenotes/
 │   │   ├── NoteDao.kt
 │   │   └── NoteDatabase.kt
 │   ├── export/              ExportSchema, LegacyNote, ImportExportManager
+│   ├── preferences/         App-local note display preferences
 │   └── repository/          Note operations and widget refresh triggers
 ├── di/                      Hilt database and notification modules
 ├── domain/usecase/          UseCases (CRUD, archive, reorder, lookup)
@@ -91,14 +93,14 @@ The application's core architecture and primary screen structures are in place. 
 |---|---|
 | SDK target | `compileSdk`/`targetSdk`/`minSdk` are all 36 for modern Android environments. |
 | Theme and typography | Dark theme and palette are implemented. Inter downloadable font is not yet configured. |
-| Notes, search, pinning, importance | Main/editor UI and Room flows are present. |
+| Notes, search, pinning, importance | Main/editor UI and Room flows are present. The main menu's persistent “Reminders first” toggle sorts reminder notes first in the main list, search results, and management mode while retaining order within each group. |
 | Archive and reorder | Main-screen swipe archive, management-mode drag reorder and swipe-to-delete, and Archive screen swipe-to-unarchive and swipe-to-delete are present with undo. Management mode shows its actions beside the note count; the drag handle is centered in each note's footer row. |
 | Reminders | Future reminders use exact alarms while idle when Android exact-alarm access is allowed, with a WorkManager fallback and a warning when exact access is unavailable. Notification and exact-alarm access are requested when saving a reminder; disabled notifications or channel sound link to system settings. The channel uses the system default notification sound unless changed in Android settings. Boot, app-update, and permission-grant rescheduling are supported. Past reminder times are rejected. Archiving does not cancel an existing reminder; repeating monthly reminders use a fixed 30-day interval rather than calendar-month rules. |
 | Undo | Main-screen and Archive-screen archive, unarchive, and delete snackbars all expose functional undo actions. |
 | Widget | A native RemoteViews `ListView` collection displays all active notes in DAO order, clips previews to one line, and refreshes after repository mutations. Each row passes its note ID to the app; the add-note control sends an Activity intent (`ACTION_CREATE_NOTE`) that opens note creation, including when the app is already running. Click bindings are refreshed after app updates and activity launches. |
 | Import | Legacy bare arrays and versioned exports are parsed and upserted. Validation is limited, and parser failures can be reported as a successful import of zero notes. Import does not reschedule imported reminders. |
 | Export | JSON serialization and FileProvider sharing code exist, but the Settings ViewModel collects a long-lived Room `Flow` instead of taking one snapshot. As a result, the export operation can remain suspended and fail to produce a share event; it also reads only active notes. |
-| Tests | Two JVM test classes cover sample-data import/export and simple RRULE interval parsing. In-memory Room DAO tests and Compose UI tests are currently absent. |
+| Tests | JVM tests cover sample-data import/export, reminder interval parsing, and stable reminder-first ordering. In-memory Room DAO tests and Compose UI tests are currently absent. |
 
 This review is based on the checked-in source and a successful unit-test run; it is not a claim that every interaction has been manually tested on a device. Refer to the blueprint for the recommended completion order.
 
@@ -108,6 +110,7 @@ Existing test files:
 
 - `app/src/test/java/com/nicenotes/data/export/ImportExportTest.kt`
 - `app/src/test/java/com/nicenotes/notification/ReminderSchedulerTest.kt`
+- `app/src/test/java/com/nicenotes/ui/screen/main/ReminderNoteSortingTest.kt`
 
 Verified during this documentation update:
 

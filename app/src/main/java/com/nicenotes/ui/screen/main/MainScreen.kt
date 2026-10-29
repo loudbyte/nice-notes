@@ -57,6 +57,7 @@ fun MainScreen(
 ) {
     val notes by viewModel.notes.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val remindersFirst by viewModel.remindersFirst.collectAsState()
     val isManagementMode by viewModel.isManagementMode.collectAsState()
     val lazyListState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -327,6 +328,18 @@ fun MainScreen(
                             onClick = {
                                 showDropdown = false
                                 onNavigateToSettings()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Reminders first", color = TextPrimary) },
+                            onClick = {
+                                viewModel.setRemindersFirst(!remindersFirst)
+                            },
+                            trailingIcon = {
+                                Switch(
+                                    checked = remindersFirst,
+                                    onCheckedChange = viewModel::setRemindersFirst
+                                )
                             }
                         )
                     }

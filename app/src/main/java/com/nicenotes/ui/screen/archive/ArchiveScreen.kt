@@ -31,6 +31,7 @@ fun ArchiveScreen(
     val coroutineScope = rememberCoroutineScope()
     var editingNote by remember { mutableStateOf<Note?>(null) }
     var showEditor by remember { mutableStateOf(false) }
+    var swipeStateResetVersion by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -47,11 +48,22 @@ fun ArchiveScreen(
                         event.noteId != null
                     ) {
                         viewModel.handleSnackbarAction(event.actionType, event.noteId)
+                        if (
+                            event.actionType == UiEvent.SnackbarActionType.ARCHIVE_NOTE ||
+                            event.actionType == UiEvent.SnackbarActionType.RESTORE_ARCHIVED_NOTE
+                        ) {
+                            swipeStateResetVersion++
+                        }
                     } else if (
                         event.actionType == UiEvent.SnackbarActionType.RESTORE_ARCHIVED_NOTE &&
                         event.noteId != null
                     ) {
                         viewModel.discardDeletedNote(event.noteId)
+                    } else if (
+                        event.actionType == UiEvent.SnackbarActionType.ARCHIVE_NOTE &&
+                        event.noteId != null
+                    ) {
+                        viewModel.discardUnarchivedNote(event.noteId)
                     }
                 }
             }
@@ -110,12 +122,19 @@ fun ArchiveScreen(
                     key = { it.id }
                 ) { note ->
                     // Swipe right to unarchive, swipe left to delete
-                    val dismissState = rememberSwipeToDismissBoxState()
-                    LaunchedEffect(note.id, dismissState.currentValue) {
-                        when (dismissState.currentValue) {
-                            SwipeToDismissBoxValue.StartToEnd -> viewModel.unarchiveNote(note)
-                            SwipeToDismissBoxValue.EndToStart -> viewModel.deleteNote(note)
-                            SwipeToDismissBoxValue.Settled -> Unit
+                    val dismissState = key(swipeStateResetVersion) {
+                        rememberSwipeToDismissBoxState()
+                    }
+                    val currentNote by rememberUpdatedState(note)
+                    LaunchedEffect(note.id, dismissState) {
+                        snapshotFlow { dismissState.settledValue }.collect { settledValue ->
+                            when (settledValue) {
+                                SwipeToDismissBoxValue.StartToEnd ->
+                                    viewModel.unarchiveNote(currentNote)
+                                SwipeToDismissBoxValue.EndToStart ->
+                                    viewModel.deleteNote(currentNote)
+                                SwipeToDismissBoxValue.Settled -> Unit
+                            }
                         }
                     }
 

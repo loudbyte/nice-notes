@@ -78,6 +78,7 @@ fun MainScreen(
     var editingNote by remember { mutableStateOf<Note?>(null) }
     var pendingCreatedNoteId by remember { mutableStateOf<String?>(null) }
     var showDropdown by remember { mutableStateOf(false) }
+    var swipeStateResetVersion by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(notes, pendingCreatedNoteId) {
         val createdNoteId = pendingCreatedNoteId
@@ -125,6 +126,12 @@ fun MainScreen(
                         event.noteId != null
                     ) {
                         viewModel.handleSnackbarAction(event.actionType, event.noteId)
+                        if (
+                            event.actionType == UiEvent.SnackbarActionType.UNARCHIVE_NOTE ||
+                            event.actionType == UiEvent.SnackbarActionType.RESTORE_NOTE
+                        ) {
+                            swipeStateResetVersion++
+                        }
                     } else if (
                         event.actionType == UiEvent.SnackbarActionType.RESTORE_NOTE &&
                         event.noteId != null
@@ -360,6 +367,7 @@ fun MainScreen(
                 SwipeableNoteList(
                     notes = notes,
                     lazyListState = lazyListState,
+                    swipeStateResetVersion = swipeStateResetVersion,
                     isSearchExpanded = isSearchExpanded,
                     onSearchCollapse = ::collapseSearch,
                     onNoteClick = { note ->
@@ -374,6 +382,7 @@ fun MainScreen(
                 ReorderableNoteList(
                     notes = notes,
                     lazyListState = lazyListState,
+                    swipeStateResetVersion = swipeStateResetVersion,
                     isSearchExpanded = isSearchExpanded,
                     onSearchCollapse = ::collapseSearch,
                     onNoteClick = { note ->
@@ -421,6 +430,7 @@ fun MainScreen(
 private fun SwipeableNoteList(
     notes: List<Note>,
     lazyListState: androidx.compose.foundation.lazy.LazyListState,
+    swipeStateResetVersion: Int,
     isSearchExpanded: Boolean,
     onSearchCollapse: () -> Unit,
     onNoteClick: (Note) -> Unit,
@@ -441,10 +451,15 @@ private fun SwipeableNoteList(
             items = notes,
             key = { it.id }
         ) { note ->
-            val dismissState = rememberSwipeToDismissBoxState()
-            LaunchedEffect(note.id, dismissState.currentValue) {
-                if (dismissState.currentValue == SwipeToDismissBoxValue.StartToEnd) {
-                    onNoteArchive(note)
+            val dismissState = key(swipeStateResetVersion) {
+                rememberSwipeToDismissBoxState()
+            }
+            val currentNote by rememberUpdatedState(note)
+            LaunchedEffect(note.id, dismissState) {
+                snapshotFlow { dismissState.settledValue }.collect { settledValue ->
+                    if (settledValue == SwipeToDismissBoxValue.StartToEnd) {
+                        onNoteArchive(currentNote)
+                    }
                 }
             }
 
@@ -484,6 +499,7 @@ private fun SwipeableNoteList(
 private fun ReorderableNoteList(
     notes: List<Note>,
     lazyListState: LazyListState,
+    swipeStateResetVersion: Int,
     isSearchExpanded: Boolean,
     onSearchCollapse: () -> Unit,
     onNoteClick: (Note) -> Unit,
@@ -533,10 +549,15 @@ private fun ReorderableNoteList(
             key = { it.id }
         ) { note ->
             ReorderableItem(reorderState, key = note.id) { isDragging ->
-                val dismissState = rememberSwipeToDismissBoxState()
-                LaunchedEffect(note.id, dismissState.currentValue) {
-                    if (dismissState.currentValue == SwipeToDismissBoxValue.StartToEnd) {
-                        onNoteDelete(note)
+                val dismissState = key(swipeStateResetVersion) {
+                    rememberSwipeToDismissBoxState()
+                }
+                val currentNote by rememberUpdatedState(note)
+                LaunchedEffect(note.id, dismissState) {
+                    snapshotFlow { dismissState.settledValue }.collect { settledValue ->
+                        if (settledValue == SwipeToDismissBoxValue.StartToEnd) {
+                            onNoteDelete(currentNote)
+                        }
                     }
                 }
 

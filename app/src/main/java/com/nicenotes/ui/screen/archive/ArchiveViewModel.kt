@@ -32,9 +32,11 @@ class ArchiveViewModel @Inject constructor(
     private val _events = Channel<UiEvent>()
     val events = _events.receiveAsFlow()
     private val deletedNotes = mutableMapOf<String, Note>()
+    private val unarchivedNotes = mutableMapOf<String, Note>()
 
     fun unarchiveNote(note: Note) {
         viewModelScope.launch {
+            unarchivedNotes[note.id] = note
             unarchiveNoteUseCase(note)
             _events.send(UiEvent.ShowSnackbar(
                 message = "Note unarchived",
@@ -60,10 +62,7 @@ class ArchiveViewModel @Inject constructor(
 
     fun handleSnackbarAction(actionType: UiEvent.SnackbarActionType, noteId: String) {
         when (actionType) {
-            UiEvent.SnackbarActionType.ARCHIVE_NOTE -> {
-                val note = notes.value.firstOrNull { it.id == noteId } ?: return
-                archiveBack(note)
-            }
+            UiEvent.SnackbarActionType.ARCHIVE_NOTE -> archiveUnarchivedNote(noteId)
             UiEvent.SnackbarActionType.RESTORE_ARCHIVED_NOTE -> restoreDeletedNote(noteId)
             UiEvent.SnackbarActionType.UNARCHIVE_NOTE -> Unit
             UiEvent.SnackbarActionType.RESTORE_NOTE -> Unit
@@ -74,10 +73,18 @@ class ArchiveViewModel @Inject constructor(
         deletedNotes.remove(noteId)
     }
 
+    fun discardUnarchivedNote(noteId: String) {
+        unarchivedNotes.remove(noteId)
+    }
+
     private fun archiveBack(note: Note) {
         viewModelScope.launch {
             archiveNoteUseCase(note)
         }
+    }
+
+    private fun archiveUnarchivedNote(noteId: String) {
+        unarchivedNotes.remove(noteId)?.let(::archiveBack)
     }
 
     private fun restoreDeletedNote(noteId: String) {

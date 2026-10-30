@@ -41,7 +41,13 @@ fun ArchiveScreen(
                         actionLabel = event.action,
                         duration = SnackbarDuration.Short
                     )
-                    if (result == SnackbarResult.ActionPerformed) event.onAction()
+                    if (
+                        result == SnackbarResult.ActionPerformed &&
+                        event.actionType != null &&
+                        event.noteId != null
+                    ) {
+                        viewModel.handleSnackbarAction(event.actionType, event.noteId)
+                    }
                 }
             }
         }

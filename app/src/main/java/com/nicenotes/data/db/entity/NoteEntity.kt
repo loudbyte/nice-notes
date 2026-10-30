@@ -31,5 +31,5 @@ data class NoteEntity(
     val isPinned: Boolean = false,
     val isImportant: Boolean = false,
     val isArchived: Boolean = false,
-    val position: Long = System.currentTimeMillis(),
+    val position: Long = 0L,
 )

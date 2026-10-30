@@ -1,6 +1,5 @@
 package com.nicenotes.di
 
-import androidx.work.Configuration
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -10,5 +9,7 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NotificationModule {
-    // WorkManager is initialized via HiltWorkerFactory in NiceNotesApp
+    @Provides
+    @Singleton
+    fun provideNotificationChannelId(): String = "nice_notes_reminders"
 }

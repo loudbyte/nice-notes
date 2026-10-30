@@ -15,6 +15,27 @@ import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 
+sealed class ImportResult {
+    abstract val notes: List<Note>
+    abstract val skipped: Int
+
+    operator fun component1(): List<Note> = notes
+    operator fun component2(): Int = skipped
+
+    class Success(
+        override val notes: List<Note>,
+        override val skipped: Int,
+    ) : ImportResult()
+
+    class Error(
+        val message: String,
+        val cause: Throwable? = null,
+    ) : ImportResult() {
+        override val notes: List<Note> = emptyList()
+        override val skipped: Int = 0
+    }
+}
+
 @Singleton
 class ImportExportManager @Inject constructor() {
 
@@ -55,18 +76,20 @@ class ImportExportManager @Inject constructor() {
      * or from NiceNotes ExportRoot format.
      * Returns Pair<imported, skipped>
      */
-    fun importFromStream(inputStream: InputStream): Pair<List<Note>, Int> {
-        val raw = inputStream.bufferedReader().readText()
+    fun importFromStream(inputStream: InputStream): ImportResult {
         return try {
-            // Try NiceNotes format first
-            if (raw.trimStart().startsWith("{")) {
+            val raw = inputStream.bufferedReader().readText()
+            val notes = if (raw.trimStart().startsWith("{")) {
                 importFromExportRoot(raw)
             } else {
-                // Legacy bare array format
                 importFromLegacyArray(raw)
             }
+            ImportResult.Success(notes.first, notes.second)
         } catch (e: Exception) {
-            Pair(emptyList(), 0)
+            ImportResult.Error(
+                message = "Unable to parse the import file: ${e.message ?: "unknown error"}",
+                cause = e
+            )
         }
     }
 

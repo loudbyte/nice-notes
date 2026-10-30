@@ -85,7 +85,8 @@ class MainViewModel @Inject constructor(
             _events.send(UiEvent.ShowSnackbar(
                 message = "Note archived",
                 action = "UNDO",
-                onAction = { unarchiveNote(note) }
+                actionType = UiEvent.SnackbarActionType.UNARCHIVE_NOTE,
+                noteId = note.id
             ))
         }
     }
@@ -96,19 +97,31 @@ class MainViewModel @Inject constructor(
             _events.send(UiEvent.ShowSnackbar(
                 message = "Note deleted",
                 action = "UNDO",
-                onAction = { restoreNote(note) }
+                actionType = UiEvent.SnackbarActionType.RESTORE_NOTE,
+                noteId = note.id
             ))
         }
     }
 
-    private fun unarchiveNote(note: Note) {
+    fun handleSnackbarAction(actionType: UiEvent.SnackbarActionType, noteId: String) {
+        when (actionType) {
+            UiEvent.SnackbarActionType.UNARCHIVE_NOTE -> unarchiveNote(noteId)
+            UiEvent.SnackbarActionType.RESTORE_NOTE -> restoreNote(noteId)
+            UiEvent.SnackbarActionType.ARCHIVE_NOTE -> Unit
+            UiEvent.SnackbarActionType.RESTORE_ARCHIVED_NOTE -> Unit
+        }
+    }
+
+    private fun unarchiveNote(noteId: String) {
         viewModelScope.launch {
+            val note = getNoteByIdUseCase(noteId) ?: return@launch
             saveNoteUseCase(note.copy(isArchived = false, isDeleted = false))
         }
     }
 
-    private fun restoreNote(note: Note) {
+    private fun restoreNote(noteId: String) {
         viewModelScope.launch {
+            val note = getNoteByIdUseCase(noteId) ?: return@launch
             saveNoteUseCase(note)
         }
     }

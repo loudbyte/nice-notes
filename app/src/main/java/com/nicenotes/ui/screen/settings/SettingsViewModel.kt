@@ -5,6 +5,7 @@ import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nicenotes.data.export.ImportExportManager
+import com.nicenotes.data.export.ImportResult
 import com.nicenotes.data.repository.NoteRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -55,11 +56,23 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val (notes, skipped) = inputStream.use { stream ->
+                val result = inputStream.use { stream ->
                     importExportManager.importFromStream(stream)
                 }
-                noteRepository.upsertAll(notes)
-                _events.send(SettingsEvent.Message("Imported ${notes.size} notes, skipped $skipped invalid records"))
+
+                when (result) {
+                    is ImportResult.Success -> {
+                        noteRepository.upsertAll(result.notes)
+                        _events.send(
+                            SettingsEvent.Message(
+                                "Imported ${result.notes.size} notes, skipped ${result.skipped} invalid records"
+                            )
+                        )
+                    }
+                    is ImportResult.Error -> {
+                        _events.send(SettingsEvent.Message(result.message))
+                    }
+                }
             } catch (e: Exception) {
                 _events.send(SettingsEvent.Message("Import failed: ${e.message}"))
             } finally {

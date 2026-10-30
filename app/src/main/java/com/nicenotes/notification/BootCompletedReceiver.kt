@@ -8,6 +8,7 @@ import com.nicenotes.data.repository.NoteRepository
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -25,12 +26,14 @@ class BootCompletedReceiver : BroadcastReceiver() {
         ) return
 
         val pendingResult = goAsync()
-        CoroutineScope(Dispatchers.IO).launch {
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
                 val notesWithReminders = noteRepository.getAllWithReminders()
                 notesWithReminders.forEach { note ->
                     ReminderScheduler.schedule(context, note)
                 }
+            } catch (t: Throwable) {
+                android.util.Log.e("BootCompletedReceiver", "Failed to reschedule reminders", t)
             } finally {
                 pendingResult.finish()
             }

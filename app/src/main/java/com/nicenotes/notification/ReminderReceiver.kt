@@ -8,6 +8,7 @@ import com.nicenotes.data.repository.NoteRepository
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -25,12 +26,14 @@ class ReminderReceiver : BroadcastReceiver() {
         }
 
         val pendingResult = goAsync()
-        CoroutineScope(Dispatchers.IO).launch {
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
                 val status = ReminderDelivery.deliver(context, noteRepository, noteId)
                 if (status != NoteNotificationManager.DeliveryStatus.SHOWN) {
                     Log.w(TAG, "Reminder notification was not shown: $status")
                 }
+            } catch (t: Throwable) {
+                Log.e(TAG, "Failed to deliver reminder notification for note $noteId", t)
             } finally {
                 pendingResult.finish()
             }

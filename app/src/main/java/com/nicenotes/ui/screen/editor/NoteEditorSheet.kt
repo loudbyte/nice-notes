@@ -15,6 +15,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material3.*
@@ -45,6 +46,7 @@ fun NoteEditorSheet(
     note: Note?,
     onDismiss: () -> Unit,
     onMessage: (String, (() -> Unit)?) -> Unit,
+    onDelete: (Note) -> Unit,
     onSaved: (Note) -> Unit = {},
     viewModel: NoteEditorViewModel = hiltViewModel()
 ) {
@@ -209,8 +211,26 @@ fun NoteEditorSheet(
                         fontWeight = FontWeight.SemiBold
                     )
                 )
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = "Close", tint = TextSecondary)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = {
+                            if (note == null) {
+                                onDismiss()
+                            } else {
+                                onDelete(note)
+                                onDismiss()
+                            }
+                        }
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = if (note == null) "Discard note" else "Delete note",
+                            tint = ImportantRed
+                        )
+                    }
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextSecondary)
+                    }
                 }
             }
 

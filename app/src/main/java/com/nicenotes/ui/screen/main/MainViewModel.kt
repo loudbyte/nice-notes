@@ -60,6 +60,7 @@ class MainViewModel @Inject constructor(
 
     private val _events = Channel<UiEvent>()
     val events = _events.receiveAsFlow()
+    private val deletedNotes = mutableMapOf<String, Note>()
 
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
@@ -93,6 +94,7 @@ class MainViewModel @Inject constructor(
 
     fun deleteNote(note: Note) {
         viewModelScope.launch {
+            deletedNotes[note.id] = note
             deleteNoteUseCase(note)
             _events.send(UiEvent.ShowSnackbar(
                 message = "Note deleted",
@@ -112,6 +114,10 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun discardDeletedNote(noteId: String) {
+        deletedNotes.remove(noteId)
+    }
+
     private fun unarchiveNote(noteId: String) {
         viewModelScope.launch {
             val note = getNoteByIdUseCase(noteId) ?: return@launch
@@ -121,7 +127,9 @@ class MainViewModel @Inject constructor(
 
     private fun restoreNote(noteId: String) {
         viewModelScope.launch {
-            val note = getNoteByIdUseCase(noteId) ?: return@launch
+            val note = deletedNotes.remove(noteId)
+                ?: getNoteByIdUseCase(noteId)
+                ?: return@launch
             saveNoteUseCase(note)
         }
     }

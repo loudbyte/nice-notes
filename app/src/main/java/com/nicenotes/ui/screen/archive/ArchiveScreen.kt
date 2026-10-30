@@ -47,6 +47,11 @@ fun ArchiveScreen(
                         event.noteId != null
                     ) {
                         viewModel.handleSnackbarAction(event.actionType, event.noteId)
+                    } else if (
+                        event.actionType == UiEvent.SnackbarActionType.RESTORE_ARCHIVED_NOTE &&
+                        event.noteId != null
+                    ) {
+                        viewModel.discardDeletedNote(event.noteId)
                     }
                 }
             }
@@ -169,7 +174,8 @@ fun ArchiveScreen(
                         action?.invoke()
                     }
                 }
-            }
+            },
+            onDelete = viewModel::deleteNote,
         )
     }
 }

@@ -125,6 +125,11 @@ fun MainScreen(
                         event.noteId != null
                     ) {
                         viewModel.handleSnackbarAction(event.actionType, event.noteId)
+                    } else if (
+                        event.actionType == UiEvent.SnackbarActionType.RESTORE_NOTE &&
+                        event.noteId != null
+                    ) {
+                        viewModel.discardDeletedNote(event.noteId)
                     }
                 }
             }
@@ -405,7 +410,8 @@ fun MainScreen(
                 if (editingNote == null) {
                     pendingCreatedNoteId = savedNote.id
                 }
-            }
+            },
+            onDelete = viewModel::deleteNote,
         )
     }
 }

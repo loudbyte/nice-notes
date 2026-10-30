@@ -37,7 +37,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.nicenotes.domain.model.Note
 import com.nicenotes.ui.screen.editor.NoteEditorSheet
 import com.nicenotes.ui.common.UiEvent
@@ -435,14 +435,12 @@ private fun SwipeableNoteList(
             items = notes,
             key = { it.id }
         ) { note ->
-            val dismissState = rememberSwipeToDismissBoxState(
-                confirmValueChange = { value ->
-                    if (value == SwipeToDismissBoxValue.StartToEnd) {
-                        onNoteArchive(note)
-                        true
-                    } else false
+            val dismissState = rememberSwipeToDismissBoxState()
+            LaunchedEffect(note.id, dismissState.currentValue) {
+                if (dismissState.currentValue == SwipeToDismissBoxValue.StartToEnd) {
+                    onNoteArchive(note)
                 }
-            )
+            }
 
             SwipeToDismissBox(
                 state = dismissState,
@@ -529,16 +527,12 @@ private fun ReorderableNoteList(
             key = { it.id }
         ) { note ->
             ReorderableItem(reorderState, key = note.id) { isDragging ->
-                val dismissState = rememberSwipeToDismissBoxState(
-                    confirmValueChange = { value ->
-                        if (value == SwipeToDismissBoxValue.StartToEnd) {
-                            onNoteDelete(note)
-                            true
-                        } else {
-                            false
-                        }
+                val dismissState = rememberSwipeToDismissBoxState()
+                LaunchedEffect(note.id, dismissState.currentValue) {
+                    if (dismissState.currentValue == SwipeToDismissBoxValue.StartToEnd) {
+                        onNoteDelete(note)
                     }
-                )
+                }
 
                 SwipeToDismissBox(
                     state = dismissState,

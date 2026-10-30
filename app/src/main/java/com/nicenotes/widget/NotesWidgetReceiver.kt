@@ -4,81 +4,63 @@ import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
-import android.content.ComponentName
 import android.content.Intent
 import android.widget.RemoteViews
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.nicenotes.MainActivity
 import com.nicenotes.R
+import com.nicenotes.data.db.entity.NoteEntity
 
 class NotesWidgetReceiver : AppWidgetProvider() {
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         if (intent.action == Intent.ACTION_MY_PACKAGE_REPLACED) {
-            refreshWidgetViews(context)
+            enqueueWidgetUpdate(context)
         }
     }
 
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
-        appWidgetIds: IntArray
+        appWidgetIds: IntArray,
     ) {
-        appWidgetIds.forEach { appWidgetId ->
-            appWidgetManager.updateAppWidget(
-                appWidgetId,
-                createRemoteViews(context, appWidgetId)
-            )
-            appWidgetManager.notifyAppWidgetViewDataChanged(
-                appWidgetId,
-                R.id.widget_notes_list
-            )
-        }
+        enqueueWidgetUpdate(context)
     }
 
     override fun onAppWidgetOptionsChanged(
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int,
-        newOptions: android.os.Bundle
+        newOptions: android.os.Bundle,
     ) {
-        appWidgetManager.updateAppWidget(
-            appWidgetId,
-            createRemoteViews(context, appWidgetId)
-        )
-        appWidgetManager.notifyAppWidgetViewDataChanged(
-            appWidgetId,
-            R.id.widget_notes_list
-        )
+        enqueueWidgetUpdate(context)
     }
 
     companion object {
+        private const val UPDATE_WORK_NAME = "notes_widget_update"
+
         fun updateWidget(context: Context) {
-            refreshWidgetViews(context)
+            enqueueWidgetUpdate(context)
         }
 
-        private fun refreshWidgetViews(context: Context) {
-            val appWidgetManager = AppWidgetManager.getInstance(context)
-            val componentName = ComponentName(context, NotesWidgetReceiver::class.java)
-            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-            appWidgetIds.forEach { appWidgetId ->
-                appWidgetManager.updateAppWidget(
-                    appWidgetId,
-                    createRemoteViews(context, appWidgetId)
-                )
-                appWidgetManager.notifyAppWidgetViewDataChanged(
-                    appWidgetId,
-                    R.id.widget_notes_list
-                )
-            }
+        internal fun enqueueWidgetUpdate(context: Context) {
+            val request = OneTimeWorkRequestBuilder<NotesWidgetUpdateWorker>().build()
+            WorkManager.getInstance(context.applicationContext).enqueueUniqueWork(
+                UPDATE_WORK_NAME,
+                ExistingWorkPolicy.REPLACE,
+                request,
+            )
         }
 
-        private fun createRemoteViews(context: Context, appWidgetId: Int): RemoteViews {
+        internal fun createRemoteViews(
+            context: Context,
+            appWidgetId: Int,
+            notes: List<NoteEntity>,
+        ): RemoteViews {
             val views = RemoteViews(context.packageName, R.layout.widget_notes)
-            val serviceIntent = Intent(context, NotesWidgetService::class.java).apply {
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-                data = android.net.Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
-            }
             val collectionPendingIntent = PendingIntent.getActivity(
                 context,
                 appWidgetId,
@@ -106,7 +88,27 @@ class NotesWidgetReceiver : AppWidgetProvider() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
-            views.setRemoteAdapter(appWidgetId, R.id.widget_notes_list, serviceIntent)
+            val items = RemoteViews.RemoteCollectionItems.Builder()
+                .setHasStableIds(true)
+                .setViewTypeCount(1)
+                .apply {
+                    notes.forEach { note ->
+                        val item = RemoteViews(context.packageName, R.layout.widget_note_item).apply {
+                            setTextViewText(
+                                R.id.widget_note_content,
+                                note.mContent.replace('\n', ' ').replace('\r', ' ')
+                            )
+                            setOnClickFillInIntent(
+                                R.id.widget_note_content,
+                                Intent().putExtra(MainActivity.EXTRA_NOTE_ID, note.mLocalId)
+                            )
+                        }
+                        addItem(stableWidgetItemId(note.mLocalId), item)
+                    }
+                }
+                .build()
+
+            views.setRemoteAdapter(R.id.widget_notes_list, items)
             views.setEmptyView(R.id.widget_notes_list, R.id.widget_empty_view)
             views.setPendingIntentTemplate(
                 R.id.widget_notes_list,
@@ -121,4 +123,10 @@ class NotesWidgetReceiver : AppWidgetProvider() {
         private const val APP_OPEN_REQUEST_CODE_OFFSET = 100_000
         private const val CREATE_NOTE_REQUEST_CODE_OFFSET = 200_000
     }
+}
+
+internal fun stableWidgetItemId(noteId: String): Long {
+    val digest = java.security.MessageDigest.getInstance("SHA-256")
+        .digest(noteId.toByteArray(Charsets.UTF_8))
+    return java.nio.ByteBuffer.wrap(digest, 0, Long.SIZE_BYTES).long
 }

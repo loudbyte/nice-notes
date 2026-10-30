@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.nicenotes.ui.screen.editor.NoteEditorSheet
 import com.nicenotes.ui.screen.main.NoteListItem
 import com.nicenotes.ui.common.UiEvent
@@ -105,21 +105,14 @@ fun ArchiveScreen(
                     key = { it.id }
                 ) { note ->
                     // Swipe right to unarchive, swipe left to delete
-                    val dismissState = rememberSwipeToDismissBoxState(
-                        confirmValueChange = { value ->
-                            when (value) {
-                                SwipeToDismissBoxValue.StartToEnd -> {
-                                    viewModel.unarchiveNote(note)
-                                    true
-                                }
-                                SwipeToDismissBoxValue.EndToStart -> {
-                                    viewModel.deleteNote(note)
-                                    true
-                                }
-                                else -> false
-                            }
+                    val dismissState = rememberSwipeToDismissBoxState()
+                    LaunchedEffect(note.id, dismissState.currentValue) {
+                        when (dismissState.currentValue) {
+                            SwipeToDismissBoxValue.StartToEnd -> viewModel.unarchiveNote(note)
+                            SwipeToDismissBoxValue.EndToStart -> viewModel.deleteNote(note)
+                            SwipeToDismissBoxValue.Settled -> Unit
                         }
-                    )
+                    }
 
                     val isDelete = dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart
                     SwipeToDismissBox(

@@ -68,11 +68,6 @@
                 android:resource="@xml/notes_widget_info" />
         </receiver>
 
-        <service
-            android:name=".widget.NotesWidgetService"
-            android:exported="false"
-            android:permission="android.permission.BIND_REMOTEVIEWS" />
-
         <!-- FileProvider for export -->
         <provider
             android:name="androidx.core.content.FileProvider"

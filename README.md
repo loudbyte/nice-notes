@@ -26,9 +26,9 @@ The feature list describes implemented UI/code surfaces. Some behaviors have cav
 
 - Android Studio with an Android SDK Platform 36 installation.
 - JDK 17 to run the Gradle 8.14.6 wrapper, Android Gradle Plugin 8.13.2, and Kotlin 2.3.21 build targeting Java 17 bytecode.
-- An Android device or emulator running API 36 or newer.
+- An Android device or emulator running API 33 (Android 13) or newer.
 
-The app is configured with `minSdk = 36`, `compileSdk = 36`, and `targetSdk = 36`.
+The app is configured with `minSdk = 33`, `compileSdk = 36`, and `targetSdk = 36`. Android SDK Platform 36 is still required to build the app.
 Library and plugin versions are centralized in [`gradle/libs.versions.toml`](./gradle/libs.versions.toml).
 
 ## Build and run
@@ -78,7 +78,7 @@ app/src/main/java/com/nicenotes/
 │   ├── screen/              Main, editor, archive, and settings screens/ViewModels
 │   ├── component/           Reminder dialog
 │   └── theme/               Dark Material 3 theme
-├── widget/                  RemoteViews widget provider and collection service
+├── widget/                  RemoteViews widget provider and WorkManager update worker
 ├── MainActivity.kt          Navigation host and notification entry point
 └── NiceNotesApp.kt          Hilt and WorkManager initialization
 ```
@@ -91,13 +91,13 @@ The application's core architecture and primary screen structures are in place. 
 
 | Area | Current state |
 |---|---|
-| SDK target | `compileSdk`/`targetSdk`/`minSdk` are all 36 for modern Android environments. |
+| SDK support | `minSdk` is 33 (Android 13); `compileSdk` and `targetSdk` are 36. Runtime notification permission is requested when saving a reminder on Android 13 and newer. |
 | Theme and typography | Dark theme and palette are implemented. Inter downloadable font is not yet configured. |
 | Notes, search, pinning, importance | Main/editor UI and Room flows are present. The main menu's persistent “Reminders first” toggle sorts reminder notes first in the main list, search results, and management mode while retaining order within each group. |
 | Archive and reorder | Main-screen swipe archive, management-mode drag reorder and swipe-to-delete, and Archive screen swipe-to-unarchive and swipe-to-delete are present with undo. Management mode shows its actions beside the note count; the drag handle is centered in each note's footer row. |
 | Reminders | Future reminders use exact alarms while idle when Android exact-alarm access is allowed, with a WorkManager fallback and a warning when exact access is unavailable. Notification and exact-alarm access are requested when saving a reminder; disabled notifications or channel sound link to system settings. The channel uses the system default notification sound unless changed in Android settings. Boot, app-update, and permission-grant rescheduling are supported. Past reminder times are rejected. Archiving does not cancel an existing reminder; repeating monthly reminders use a fixed 30-day interval rather than calendar-month rules. |
 | Undo | Main-screen and Archive-screen archive, unarchive, and delete snackbars all expose functional undo actions. |
-| Widget | A native RemoteViews `ListView` collection displays all active notes in DAO order, clips previews to one line, and refreshes after repository mutations. Each row passes its note ID to the app; the add-note control sends an Activity intent (`ACTION_CREATE_NOTE`) that opens note creation, including when the app is already running. Click bindings are refreshed after app updates and activity launches. |
+| Widget | A native RemoteViews `ListView` collection displays all active notes in DAO order, clips previews to one line, and refreshes after repository mutations. Each row passes its note ID to the app; the add-note control sends an Activity intent (`ACTION_CREATE_NOTE`) that opens note creation, including when the app is already running. Collection updates use `RemoteCollectionItems` (API 31+), so they are available at the app's API 33 minimum. |
 | Import | Legacy bare arrays and versioned exports are parsed and upserted. Validation is limited, and parser failures can be reported as a successful import of zero notes. Import does not reschedule imported reminders. |
 | Export | JSON serialization and FileProvider sharing code exist, but the Settings ViewModel collects a long-lived Room `Flow` instead of taking one snapshot. As a result, the export operation can remain suspended and fail to produce a share event; it also reads only active notes. |
 | Tests | JVM tests cover sample-data import/export, reminder interval parsing, and stable reminder-first ordering. In-memory Room DAO tests and Compose UI tests are currently absent. |

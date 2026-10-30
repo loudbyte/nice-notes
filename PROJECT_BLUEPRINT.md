@@ -34,17 +34,17 @@ This document serves as the comprehensive architectural blueprint and system ref
 |---|---|
 | Language/UI | Kotlin, Jetpack Compose, Material 3, Java 17 |
 | Architecture | Compose screens/ViewModels → use cases → domain `Note` → repository mapping → Room DAO/entities |
-| Dependency injection | Hilt; widget service accesses the singleton database through a Hilt entry point |
+| Dependency injection | Hilt; widget update worker accesses the singleton database through a Hilt entry point |
 | Persistence | Room, one `notes` table, schema version 1, exported schema snapshots |
 | Background work | AlarmManager exact reminders with WorkManager/Hilt fallback |
 | Notifications | Android notification channel and notification intents |
 | Widget | Android AppWidget `RemoteViews` collection |
 | JSON | kotlinx.serialization |
 | Reordering | `sh.calvin.reorderable` |
-| Android SDK | min 36, compile 36, target 36 |
+| Android SDK | min 33, compile 36, target 36 |
 | Project modules | `:app` only |
 
-The application targets modern Android runtimes with min SDK 36.
+The application supports Android 13 (API 33) and newer. It compiles and targets API 36.
 
 ## 4. High-level architecture
 
@@ -195,7 +195,7 @@ app/src/main/java/com/nicenotes/
 │   ├── screen/settings/     Import/export and settings
 │   └── theme/               Colors, typography, Material theme
 ├── util/                    Immutable java.time note date formatters
-├── widget/                  RemoteViews widget provider and collection service
+├── widget/                  RemoteViews widget provider and WorkManager update worker
 ├── MainActivity.kt
 └── NiceNotesApp.kt
 ```

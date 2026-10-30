@@ -21,7 +21,6 @@ import com.nicenotes.ui.screen.archive.ArchiveScreen
 import com.nicenotes.ui.screen.main.MainScreen
 import com.nicenotes.ui.screen.settings.SettingsScreen
 import com.nicenotes.ui.theme.NiceNotesTheme
-import com.nicenotes.widget.NotesWidgetReceiver
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -34,7 +33,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        NotesWidgetReceiver.updateWidget(this)
         updateNavigationRequest(intent)
 
         setContent {
@@ -52,7 +50,6 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        NotesWidgetReceiver.updateWidget(this)
         updateNavigationRequest(intent)
     }
 

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="widget_important_background">#FF3B0F0F</color>
+    <color name="widget_reminder_blue">#FF42A5F5</color>
+</resources>

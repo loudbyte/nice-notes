@@ -46,12 +46,25 @@ private class NotesRemoteViewsFactory(
     override fun getViewAt(position: Int): RemoteViews? {
         val note = notes.getOrNull(position) ?: return null
         return RemoteViews(context.packageName, R.layout.widget_note_item).apply {
+            setInt(
+                R.id.widget_note_item_root,
+                "setBackgroundColor",
+                if (note.isImportant) {
+                    context.getColor(R.color.widget_important_background)
+                } else {
+                    android.graphics.Color.TRANSPARENT
+                },
+            )
             setTextViewText(
                 R.id.widget_note_content,
                 note.mContent.replace('\n', ' ').replace('\r', ' '),
             )
+            setViewVisibility(
+                R.id.widget_note_reminder_indicator,
+                if (note.mAlarmTime != null) android.view.View.VISIBLE else android.view.View.GONE,
+            )
             setOnClickFillInIntent(
-                R.id.widget_note_content,
+                R.id.widget_note_item_root,
                 Intent().putExtra(MainActivity.EXTRA_NOTE_ID, note.mLocalId),
             )
         }

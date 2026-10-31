@@ -22,6 +22,7 @@ object NoteNotificationManager {
     enum class DeliveryStatus {
         SHOWN,
         NOTE_NOT_FOUND,
+        NOTE_TRASHED,
         APP_NOTIFICATIONS_DISABLED,
         CHANNEL_DISABLED,
     }

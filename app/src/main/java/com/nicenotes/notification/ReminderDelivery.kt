@@ -12,6 +12,10 @@ object ReminderDelivery {
     ): NoteNotificationManager.DeliveryStatus {
         val note = repository.getById(noteId)
             ?: return NoteNotificationManager.DeliveryStatus.NOTE_NOT_FOUND
+        if (note.isTrashed) {
+            ReminderScheduler.cancel(context, noteId)
+            return NoteNotificationManager.DeliveryStatus.NOTE_TRASHED
+        }
 
         val status = NoteNotificationManager.showReminder(context, note)
         if (status == NoteNotificationManager.DeliveryStatus.SHOWN) {

@@ -1,5 +1,6 @@
 package com.nicenotes.data.db.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -31,5 +32,6 @@ data class NoteEntity(
     val isPinned: Boolean = false,
     val isImportant: Boolean = false,
     val isArchived: Boolean = false,
+    @ColumnInfo(defaultValue = "0") val isTrashed: Boolean = false,
     val position: Long = 0L,
 )

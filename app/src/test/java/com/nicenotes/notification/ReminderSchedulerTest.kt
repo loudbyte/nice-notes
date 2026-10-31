@@ -148,6 +148,9 @@ class ReminderSchedulerTest {
             ReminderScheduler.prepareImportedReminder(note.copy(isArchived = true), now = 1_000L)
         )
         assertNull(
+            ReminderScheduler.prepareImportedReminder(note.copy(isTrashed = true), now = 1_000L)
+        )
+        assertNull(
             ReminderScheduler.prepareImportedReminder(note.copy(alarmTime = null), now = 1_000L)
         )
     }

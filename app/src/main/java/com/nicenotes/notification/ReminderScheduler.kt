@@ -88,7 +88,7 @@ object ReminderScheduler {
     }
 
     fun prepareImportedReminder(note: Note, now: Long = System.currentTimeMillis()): Note? {
-        if (note.isArchived) return null
+        if (note.isArchived || note.isTrashed) return null
         val alarmTime = note.alarmTime ?: return null
         return if (alarmTime > now) note else nextFutureOccurrence(note, now)
     }

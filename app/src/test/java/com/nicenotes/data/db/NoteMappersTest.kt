@@ -33,6 +33,7 @@ class NoteMappersTest {
             isPinned = true,
             isImportant = true,
             isArchived = true,
+            isTrashed = true,
             position = 10L,
         )
 

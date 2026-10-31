@@ -25,5 +25,6 @@ data class Note(
     val isPinned: Boolean = false,
     val isImportant: Boolean = false,
     val isArchived: Boolean = false,
+    val isTrashed: Boolean = false,
     val position: Long = 0L,
 )

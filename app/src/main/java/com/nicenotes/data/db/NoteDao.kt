@@ -16,6 +16,7 @@ interface NoteDao {
     @Query("""
         SELECT * FROM notes
         WHERE isArchived = 0
+          AND isTrashed = 0
         ORDER BY isPinned DESC, position DESC
     """)
     fun observeActiveNotes(): Flow<List<NoteEntity>>
@@ -23,6 +24,7 @@ interface NoteDao {
     @Query("""
         SELECT * FROM notes
         WHERE isArchived = 0
+          AND isTrashed = 0
         ORDER BY isPinned DESC, position DESC
     """)
     suspend fun getActiveNotes(): List<NoteEntity>
@@ -30,13 +32,17 @@ interface NoteDao {
     @Query("""
         SELECT * FROM notes
         WHERE isArchived = 0
+          AND isTrashed = 0
           AND mContent LIKE '%' || :query || '%'
         ORDER BY isPinned DESC, position DESC
     """)
     fun searchActiveNotes(query: String): Flow<List<NoteEntity>>
 
-    @Query("SELECT * FROM notes WHERE isArchived = 1 ORDER BY mUpdateTime DESC")
+    @Query("SELECT * FROM notes WHERE isArchived = 1 AND isTrashed = 0 ORDER BY mUpdateTime DESC")
     fun observeArchivedNotes(): Flow<List<NoteEntity>>
+
+    @Query("SELECT * FROM notes WHERE isTrashed = 1 ORDER BY mUpdateTime DESC")
+    fun observeTrashedNotes(): Flow<List<NoteEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(note: NoteEntity)
@@ -53,14 +59,20 @@ interface NoteDao {
     @Query("SELECT * FROM notes WHERE mLocalId = :id")
     suspend fun getById(id: String): NoteEntity?
 
-    @Query("SELECT MAX(position) FROM notes WHERE isArchived = 0")
+    @Query("SELECT MAX(position) FROM notes WHERE isArchived = 0 AND isTrashed = 0")
     suspend fun maxPosition(): Long?
 
-    @Query("SELECT * FROM notes WHERE mAlarmTime IS NOT NULL AND isArchived = 0")
+    @Query("SELECT * FROM notes WHERE mAlarmTime IS NOT NULL AND isArchived = 0 AND isTrashed = 0")
     suspend fun getAllWithReminders(): List<NoteEntity>
+
+    @Query("SELECT * FROM notes WHERE isTrashed = 1")
+    suspend fun getTrashedNotes(): List<NoteEntity>
 
     @Query("SELECT * FROM notes")
     suspend fun getAllNotes(): List<NoteEntity>
+
+    @Query("DELETE FROM notes WHERE isTrashed = 1")
+    suspend fun deleteAllTrashed()
 
     @Query("UPDATE notes SET position = :position WHERE mLocalId = :id")
     suspend fun updatePosition(id: String, position: Long)

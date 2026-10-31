@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "c3d7e2b0495112ee1dd09e1e0d3c69df",
+    "identityHash": "33f228f755baf6cde4783038cd875cc9",
     "entities": [
       {
         "tableName": "notes",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`mLocalId` TEXT NOT NULL, `mGlobalId` TEXT, `mContent` TEXT NOT NULL, `mStatus` TEXT NOT NULL, `mCreateTime` INTEGER NOT NULL, `mUpdateTime` INTEGER NOT NULL, `mTimestamp` INTEGER NOT NULL, `mFinishTime` INTEGER, `mIsDelete` INTEGER NOT NULL, `mIsLocal` INTEGER NOT NULL, `mAlarmTime` INTEGER, `mAlarmTimePre` INTEGER, `mNextAlarmTime` INTEGER, `mRepeatRulePre` TEXT NOT NULL, `mForceReminderPre` INTEGER NOT NULL, `isReminded` INTEGER NOT NULL, `mColorIndex` INTEGER NOT NULL, `mParentId` TEXT, `mSysVersion` INTEGER NOT NULL, `mExtraForceReminder` INTEGER NOT NULL, `mExtraRepeatRule` TEXT NOT NULL, `isPinned` INTEGER NOT NULL, `isImportant` INTEGER NOT NULL, `isArchived` INTEGER NOT NULL, `position` INTEGER NOT NULL, PRIMARY KEY(`mLocalId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`mLocalId` TEXT NOT NULL, `mGlobalId` TEXT, `mContent` TEXT NOT NULL, `mStatus` TEXT NOT NULL, `mCreateTime` INTEGER NOT NULL, `mUpdateTime` INTEGER NOT NULL, `mTimestamp` INTEGER NOT NULL, `mFinishTime` INTEGER, `mIsDelete` INTEGER NOT NULL, `mIsLocal` INTEGER NOT NULL, `mAlarmTime` INTEGER, `mAlarmTimePre` INTEGER, `mNextAlarmTime` INTEGER, `mRepeatRulePre` TEXT NOT NULL, `mForceReminderPre` INTEGER NOT NULL, `isReminded` INTEGER NOT NULL, `mColorIndex` INTEGER NOT NULL, `mParentId` TEXT, `mSysVersion` INTEGER NOT NULL, `mExtraForceReminder` INTEGER NOT NULL, `mExtraRepeatRule` TEXT NOT NULL, `isPinned` INTEGER NOT NULL, `isImportant` INTEGER NOT NULL, `isArchived` INTEGER NOT NULL, `isTrashed` INTEGER NOT NULL DEFAULT 0, `position` INTEGER NOT NULL, PRIMARY KEY(`mLocalId`))",
         "fields": [
           {
             "fieldPath": "mLocalId",
@@ -147,6 +147,13 @@
             "notNull": true
           },
           {
+            "fieldPath": "isTrashed",
+            "columnName": "isTrashed",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
             "fieldPath": "position",
             "columnName": "position",
             "affinity": "INTEGER",
@@ -163,7 +170,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c3d7e2b0495112ee1dd09e1e0d3c69df')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '33f228f755baf6cde4783038cd875cc9')"
     ]
   }
 }

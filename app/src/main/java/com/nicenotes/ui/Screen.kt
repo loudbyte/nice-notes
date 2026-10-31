@@ -9,4 +9,7 @@ data object MainRoute
 data object ArchiveRoute
 
 @Serializable
+data object TrashRoute
+
+@Serializable
 data object SettingsRoute

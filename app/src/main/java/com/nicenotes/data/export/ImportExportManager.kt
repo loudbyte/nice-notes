@@ -150,6 +150,7 @@ class ImportExportManager @Inject constructor() {
             isPinned = isPinned,
             isImportant = isImportant,
             isArchived = isArchived,
+            isTrashed = isTrashed,
             position = position,
         )
     }
@@ -184,6 +185,7 @@ class ImportExportManager @Inject constructor() {
             isPinned = isPinned,
             isImportant = isImportant,
             isArchived = isArchived || mIsDelete || finishedAt != null,
+            isTrashed = isTrashed,
             position = if (position == 0L) now else position,
         )
     }

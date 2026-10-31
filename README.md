@@ -1,6 +1,6 @@
 # NiceNotes
 
-NiceNotes is a dark-themed Android notes app built with Kotlin and Jetpack Compose. It stores notes locally with Room and includes note editing, archive and pin/importance controls, reminders, a home-screen widget, and JSON import/export surfaces.
+NiceNotes is a dark-themed Android notes app built with Kotlin and Jetpack Compose. It stores notes locally with Room and includes note editing, Archive and Trash, pin/importance controls, reminders, a home-screen widget, and JSON import/export surfaces.
 
 > **Current status:** NiceNotes is an active, standalone Android app in continuous development. Several features have known caveats and technical debt; see [Feature status and known limitations](#feature-status-and-known-limitations) and [`PROJECT_BLUEPRINT.md`](./PROJECT_BLUEPRINT.md).
 
@@ -11,7 +11,7 @@ NiceNotes is a dark-themed Android notes app built with Kotlin and Jetpack Compo
 - View full note content in the list without truncation.
 - Pin notes, mark them important, and manually reorder them in management mode.
 - Sort notes with reminders first using the persistent “Reminders first” toggle in the main menu; enabled by default and applied to search and management mode.
-- Archive active notes by swiping; browse, unarchive (swipe right), and delete (swipe left) notes from the Archive screen with undo.
+- Archive active notes by swiping; move notes to Trash from the main list, Archive, or editor. Restore trashed notes to their prior location, permanently delete individual notes with undo, or empty Trash after confirmation.
 - Set one-time or daily, weekly, and monthly repeating reminders.
 - Receive reminder notifications and tap to open the note directly in the editor.
 - View and scroll through all active notes in a home-screen widget; each preview is limited to one line with overflow ellipsized. Tap `+` to open a new note.
@@ -64,7 +64,7 @@ The project is a single Android app module (`:app`) organized around Compose scr
 app/src/main/java/com/nicenotes/
 ├── data/
 │   ├── db/
-│   │   ├── entity/          NoteEntity
+│   │   ├── entity/          NoteEntity (archive and Trash state)
 │   │   ├── NoteDao.kt
 │   │   └── NoteDatabase.kt
 │   ├── export/              ExportSchema, LegacyNote, ImportExportManager
@@ -94,9 +94,9 @@ The application's core architecture and primary screen structures are in place. 
 | SDK support | `minSdk` is 33 (Android 13); `compileSdk` and `targetSdk` are 36. Runtime notification permission is requested when saving a reminder on Android 13 and newer. |
 | Theme and typography | Dark theme and palette are implemented. Inter downloadable font is not yet configured. |
 | Notes, search, pinning, importance | Main/editor UI and Room flows are present. The main menu's persistent “Reminders first” toggle sorts reminder notes first in the main list, search results, and management mode while retaining order within each group. |
-| Archive and reorder | Main-screen swipe archive, management-mode drag reorder and swipe-to-delete, and Archive screen swipe-to-unarchive and swipe-to-delete are present with undo. Management mode shows its actions beside the note count; the drag handle is centered in each note's footer row. |
+| Archive, Trash, and reorder | Main-screen swipe archive, management-mode drag reorder and move-to-Trash, and Archive screen swipe-to-unarchive and move-to-Trash are available with undo. Trash is separate from Archive; swipe left to restore a trashed note to its previous active/archive location, swipe right to permanently delete it with undo, or confirm “Delete all” to permanently clear Trash. Trashing cancels active reminders. Management mode shows its actions beside the note count; the drag handle is centered in each note's footer row. |
 | Reminders | Future reminders use exact alarms while idle when Android exact-alarm access is allowed, with a WorkManager fallback and a warning when exact access is unavailable. Notification and exact-alarm access are requested when saving a reminder; disabled notifications or channel sound link to system settings. The channel uses the system default notification sound unless changed in Android settings. Boot, app-update, and permission-grant rescheduling are supported. Past reminder times are rejected. Archiving does not cancel an existing reminder; repeating monthly reminders use a fixed 30-day interval rather than calendar-month rules. |
-| Undo | Main-screen and Archive-screen archive, unarchive, and delete snackbars all expose functional undo actions. |
+| Undo | Main-screen and Archive-screen archive, unarchive, and move-to-Trash snackbars expose undo. Trash permanent-delete swipes also expose undo; Delete all requires confirmation and is permanent. |
 | Widget | A native RemoteViews `ListView` collection displays all active notes in DAO order, clips previews to one line, and refreshes its collection data directly after repository mutations without scheduling background work or replacing the whole widget layout. The first widget requests one delayed follow-up after the launcher binds its service; ordinary `onUpdate` callbacks do not enqueue repeated delayed refreshes. Each row passes its note ID to the app; the add-note control sends an Activity intent (`ACTION_CREATE_NOTE`) that opens note creation, including when the app is already running. Collection rows are provided by `NotesWidgetService`. |
 | Import | Legacy bare arrays and versioned exports are parsed and upserted; notes with a completion time are imported as archived. Imported active reminders are scheduled. Past-due repeating reminders advance to their next future occurrence; past-due one-time reminders remain unscheduled. Import requests notification permission and, when needed, exact-alarm access; if exact access is declined or unavailable, reminders use best-effort WorkManager delivery. Validation is limited, and parser failures can be reported as a successful import of zero notes. |
 | Export | JSON serialization and FileProvider sharing code exist, but the Settings ViewModel collects a long-lived Room `Flow` instead of taking one snapshot. As a result, the export operation can remain suspended and fail to produce a share event; it also reads only active notes. |

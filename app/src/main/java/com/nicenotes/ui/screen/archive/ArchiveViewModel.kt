@@ -4,9 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nicenotes.domain.model.Note
 import com.nicenotes.domain.usecase.ArchiveNoteUseCase
-import com.nicenotes.domain.usecase.DeleteNoteUseCase
 import com.nicenotes.domain.usecase.GetArchivedNotesUseCase
-import com.nicenotes.domain.usecase.SaveNoteUseCase
+import com.nicenotes.domain.usecase.MoveNoteToTrashUseCase
+import com.nicenotes.domain.usecase.RestoreFromTrashUseCase
 import com.nicenotes.domain.usecase.UnarchiveNoteUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -22,8 +22,8 @@ class ArchiveViewModel @Inject constructor(
     getArchivedNotesUseCase: GetArchivedNotesUseCase,
     private val unarchiveNoteUseCase: UnarchiveNoteUseCase,
     private val archiveNoteUseCase: ArchiveNoteUseCase,
-    private val deleteNoteUseCase: DeleteNoteUseCase,
-    private val saveNoteUseCase: SaveNoteUseCase,
+    private val moveNoteToTrashUseCase: MoveNoteToTrashUseCase,
+    private val restoreFromTrashUseCase: RestoreFromTrashUseCase,
 ) : ViewModel() {
 
     val notes = getArchivedNotesUseCase()
@@ -50,9 +50,9 @@ class ArchiveViewModel @Inject constructor(
     fun deleteNote(note: Note) {
         viewModelScope.launch {
             deletedNotes[note.id] = note
-            deleteNoteUseCase(note)
+            moveNoteToTrashUseCase(note)
             _events.send(UiEvent.ShowSnackbar(
-                message = "Note deleted",
+                message = "Moved to Trash",
                 action = "UNDO",
                 actionType = UiEvent.SnackbarActionType.RESTORE_ARCHIVED_NOTE,
                 noteId = note.id
@@ -64,6 +64,7 @@ class ArchiveViewModel @Inject constructor(
         when (actionType) {
             UiEvent.SnackbarActionType.ARCHIVE_NOTE -> archiveUnarchivedNote(noteId)
             UiEvent.SnackbarActionType.RESTORE_ARCHIVED_NOTE -> restoreDeletedNote(noteId)
+            UiEvent.SnackbarActionType.RESTORE_TO_TRASH -> Unit
             UiEvent.SnackbarActionType.UNARCHIVE_NOTE -> Unit
             UiEvent.SnackbarActionType.RESTORE_NOTE -> Unit
         }
@@ -92,7 +93,7 @@ class ArchiveViewModel @Inject constructor(
             val note = deletedNotes.remove(noteId)
                 ?: notes.value.firstOrNull { it.id == noteId }
                 ?: return@launch
-            saveNoteUseCase(note)
+            restoreFromTrashUseCase(note)
         }
     }
 }

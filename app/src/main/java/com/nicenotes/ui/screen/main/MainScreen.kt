@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -49,6 +50,7 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 @Composable
 fun MainScreen(
     onNavigateToArchive: () -> Unit,
+    onNavigateToTrash: () -> Unit,
     onNavigateToSettings: () -> Unit,
     openNoteId: String? = null,
     openNoteRequestId: Long = 0,
@@ -242,7 +244,7 @@ fun MainScreen(
                 )
                 if (isManagementMode) {
                     Text(
-                        text = "Management mode — drag to reorder, swipe to delete",
+                        text = "Management mode — drag to reorder, swipe to move to Trash",
                         style = MaterialTheme.typography.labelSmall.copy(color = TextSecondary),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -334,6 +336,16 @@ fun MainScreen(
                             onClick = {
                                 showDropdown = false
                                 onNavigateToArchive()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Trash", color = TextPrimary) },
+                            leadingIcon = {
+                                Icon(Icons.Default.Delete, null, tint = TextSecondary)
+                            },
+                            onClick = {
+                                showDropdown = false
+                                onNavigateToTrash()
                             }
                         )
                         DropdownMenuItem(

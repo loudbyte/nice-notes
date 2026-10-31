@@ -17,9 +17,11 @@ import androidx.navigation.compose.rememberNavController
 import com.nicenotes.ui.ArchiveRoute
 import com.nicenotes.ui.MainRoute
 import com.nicenotes.ui.SettingsRoute
+import com.nicenotes.ui.TrashRoute
 import com.nicenotes.ui.screen.archive.ArchiveScreen
 import com.nicenotes.ui.screen.main.MainScreen
 import com.nicenotes.ui.screen.settings.SettingsScreen
+import com.nicenotes.ui.screen.trash.TrashScreen
 import com.nicenotes.ui.theme.NiceNotesTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -99,6 +101,7 @@ fun NiceNotesNavGraph(
         composable<MainRoute> {
             MainScreen(
                 onNavigateToArchive = { navController.navigate(ArchiveRoute) },
+                onNavigateToTrash = { navController.navigate(TrashRoute) },
                 onNavigateToSettings = { navController.navigate(SettingsRoute) },
                 openNoteId = openNoteId,
                 openNoteRequestId = openNoteRequestId,
@@ -107,6 +110,9 @@ fun NiceNotesNavGraph(
         }
         composable<ArchiveRoute> {
             ArchiveScreen(onBack = { navController.popBackStack() })
+        }
+        composable<TrashRoute> {
+            TrashScreen(onBack = { navController.popBackStack() })
         }
         composable<SettingsRoute> {
             SettingsScreen(onBack = { navController.popBackStack() })

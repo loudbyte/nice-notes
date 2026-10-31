@@ -6,6 +6,7 @@ import com.nicenotes.data.db.toDomain
 import com.nicenotes.data.db.toEntity
 import com.nicenotes.data.db.entity.NoteEntity
 import com.nicenotes.domain.model.Note
+import com.nicenotes.notification.ReminderScheduler
 import com.nicenotes.widget.NotesWidgetReceiver
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -26,6 +27,10 @@ class NoteRepository @Inject constructor(
         notes.map(NoteEntity::toDomain)
     }
 
+    fun observeTrashedNotes(): Flow<List<Note>> = dao.observeTrashedNotes().map { notes ->
+        notes.map(NoteEntity::toDomain)
+    }
+
     fun searchNotes(query: String): Flow<List<Note>> = dao.searchActiveNotes(query).map { notes ->
         notes.map(NoteEntity::toDomain)
     }
@@ -36,7 +41,36 @@ class NoteRepository @Inject constructor(
     }
 
     suspend fun delete(note: Note) {
+        ReminderScheduler.cancel(context, note.id)
         dao.delete(note.toEntity())
+        triggerWidgetUpdate()
+    }
+
+    suspend fun moveToTrash(note: Note) {
+        dao.upsert(note.copy(isTrashed = true).toEntity())
+        ReminderScheduler.cancel(context, note.id)
+        triggerWidgetUpdate()
+    }
+
+    suspend fun restoreFromTrash(note: Note) {
+        val restoredNote = note.copy(isTrashed = false)
+        dao.upsert(restoredNote.toEntity())
+        if (!restoredNote.isArchived && restoredNote.alarmTime != null) {
+            ReminderScheduler.schedule(context, restoredNote)
+        }
+        triggerWidgetUpdate()
+    }
+
+    suspend fun restoreToTrash(note: Note) {
+        dao.upsert(note.copy(isTrashed = true).toEntity())
+        triggerWidgetUpdate()
+    }
+
+    suspend fun deleteAllTrashed() {
+        dao.getTrashedNotes().forEach { trashedNote ->
+            ReminderScheduler.cancel(context, trashedNote.mLocalId)
+        }
+        dao.deleteAllTrashed()
         triggerWidgetUpdate()
     }
 

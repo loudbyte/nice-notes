@@ -5,10 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.nicenotes.data.preferences.NotePreferences
 import com.nicenotes.domain.model.Note
 import com.nicenotes.domain.usecase.ArchiveNoteUseCase
-import com.nicenotes.domain.usecase.DeleteNoteUseCase
 import com.nicenotes.domain.usecase.GetActiveNotesUseCase
 import com.nicenotes.domain.usecase.GetNoteByIdUseCase
+import com.nicenotes.domain.usecase.MoveNoteToTrashUseCase
 import com.nicenotes.domain.usecase.ReorderNotesUseCase
+import com.nicenotes.domain.usecase.RestoreFromTrashUseCase
 import com.nicenotes.domain.usecase.SaveNoteUseCase
 import com.nicenotes.domain.usecase.SearchNotesUseCase
 import com.nicenotes.ui.common.UiEvent
@@ -30,10 +31,11 @@ class MainViewModel @Inject constructor(
     private val getActiveNotesUseCase: GetActiveNotesUseCase,
     private val searchNotesUseCase: SearchNotesUseCase,
     private val saveNoteUseCase: SaveNoteUseCase,
-    private val deleteNoteUseCase: DeleteNoteUseCase,
+    private val moveNoteToTrashUseCase: MoveNoteToTrashUseCase,
     private val archiveNoteUseCase: ArchiveNoteUseCase,
     private val reorderNotesUseCase: ReorderNotesUseCase,
     private val getNoteByIdUseCase: GetNoteByIdUseCase,
+    private val restoreFromTrashUseCase: RestoreFromTrashUseCase,
     private val notePreferences: NotePreferences,
 ) : ViewModel() {
 
@@ -95,9 +97,9 @@ class MainViewModel @Inject constructor(
     fun deleteNote(note: Note) {
         viewModelScope.launch {
             deletedNotes[note.id] = note
-            deleteNoteUseCase(note)
+            moveNoteToTrashUseCase(note)
             _events.send(UiEvent.ShowSnackbar(
-                message = "Note deleted",
+                message = "Moved to Trash",
                 action = "UNDO",
                 actionType = UiEvent.SnackbarActionType.RESTORE_NOTE,
                 noteId = note.id
@@ -109,6 +111,7 @@ class MainViewModel @Inject constructor(
         when (actionType) {
             UiEvent.SnackbarActionType.UNARCHIVE_NOTE -> unarchiveNote(noteId)
             UiEvent.SnackbarActionType.RESTORE_NOTE -> restoreNote(noteId)
+            UiEvent.SnackbarActionType.RESTORE_TO_TRASH -> Unit
             UiEvent.SnackbarActionType.ARCHIVE_NOTE -> Unit
             UiEvent.SnackbarActionType.RESTORE_ARCHIVED_NOTE -> Unit
         }
@@ -130,7 +133,7 @@ class MainViewModel @Inject constructor(
             val note = deletedNotes.remove(noteId)
                 ?: getNoteByIdUseCase(noteId)
                 ?: return@launch
-            saveNoteUseCase(note)
+            restoreFromTrashUseCase(note)
         }
     }
 

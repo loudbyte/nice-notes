@@ -13,6 +13,10 @@ class GetArchivedNotesUseCase @Inject constructor(private val repo: NoteReposito
     operator fun invoke(): Flow<List<Note>> = repo.observeArchivedNotes()
 }
 
+class GetTrashedNotesUseCase @Inject constructor(private val repo: NoteRepository) {
+    operator fun invoke(): Flow<List<Note>> = repo.observeTrashedNotes()
+}
+
 class SearchNotesUseCase @Inject constructor(private val repo: NoteRepository) {
     operator fun invoke(query: String): Flow<List<Note>> = repo.searchNotes(query)
 }
@@ -26,6 +30,22 @@ class SaveNoteUseCase @Inject constructor(private val repo: NoteRepository) {
 
 class DeleteNoteUseCase @Inject constructor(private val repo: NoteRepository) {
     suspend operator fun invoke(note: Note) = repo.delete(note)
+}
+
+class MoveNoteToTrashUseCase @Inject constructor(private val repo: NoteRepository) {
+    suspend operator fun invoke(note: Note) = repo.moveToTrash(note)
+}
+
+class RestoreFromTrashUseCase @Inject constructor(private val repo: NoteRepository) {
+    suspend operator fun invoke(note: Note) = repo.restoreFromTrash(note)
+}
+
+class RestoreToTrashUseCase @Inject constructor(private val repo: NoteRepository) {
+    suspend operator fun invoke(note: Note) = repo.restoreToTrash(note)
+}
+
+class DeleteAllTrashedNotesUseCase @Inject constructor(private val repo: NoteRepository) {
+    suspend operator fun invoke() = repo.deleteAllTrashed()
 }
 
 class ArchiveNoteUseCase @Inject constructor(private val repo: NoteRepository) {

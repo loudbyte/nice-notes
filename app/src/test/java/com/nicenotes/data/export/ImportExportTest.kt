@@ -45,7 +45,9 @@ class ImportExportTest {
             manager.importFromStream(it)
         }
 
-        val subset = originalNotes.take(5)
+        val subset = originalNotes.take(5).mapIndexed { index, note ->
+            if (index == 0) note.copy(isTrashed = true) else note
+        }
         val exportedJson = manager.exportToJson(subset)
         assertTrue(exportedJson.startsWith("{\"version\":1"))
 
@@ -58,6 +60,7 @@ class ImportExportTest {
         assertEquals(subset[0].id, reimportedNotes[0].id)
         assertEquals(subset[0].content, reimportedNotes[0].content)
         assertEquals(subset[0].isArchived, reimportedNotes[0].isArchived)
+        assertEquals(subset[0].isTrashed, reimportedNotes[0].isTrashed)
     }
 
     @Test

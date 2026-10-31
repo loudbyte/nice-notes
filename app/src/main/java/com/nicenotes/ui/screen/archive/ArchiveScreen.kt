@@ -121,7 +121,7 @@ fun ArchiveScreen(
                     items = notes,
                     key = { it.id }
                 ) { note ->
-                    // Swipe right to unarchive, swipe left to delete
+                    // Swipe right to unarchive, swipe left to move to Trash.
                     val dismissState = key(swipeStateResetVersion) {
                         rememberSwipeToDismissBoxState()
                     }
@@ -153,7 +153,7 @@ fun ArchiveScreen(
                                 contentAlignment = if (isDelete) Alignment.CenterEnd else Alignment.CenterStart
                             ) {
                                 Text(
-                                    if (isDelete) "Delete" else "Unarchive",
+                                    if (isDelete) "Move to Trash" else "Unarchive",
                                     color = AccentWhite,
                                     modifier = Modifier.padding(horizontal = 16.dp),
                                     style = MaterialTheme.typography.bodyMedium

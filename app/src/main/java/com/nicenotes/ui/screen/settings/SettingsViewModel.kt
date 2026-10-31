@@ -197,7 +197,8 @@ class SettingsViewModel @Inject constructor(
             val noteToSchedule = ReminderScheduler.prepareImportedReminder(note, now)
             if (noteToSchedule == null) {
                 ReminderScheduler.cancel(context, note.id)
-                val isPastDue = !note.isArchived && note.alarmTime != null && note.alarmTime <= now
+                val isPastDue = !note.isArchived && !note.isTrashed &&
+                    note.alarmTime != null && note.alarmTime <= now
                 return when {
                     !isPastDue -> ImportReminderSummary()
                     note.repeatRule.isBlank() -> ImportReminderSummary(pastOneTime = 1)

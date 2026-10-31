@@ -28,6 +28,7 @@ fun NoteEntity.toDomain(): Note = Note(
     isPinned = isPinned,
     isImportant = isImportant,
     isArchived = isArchived,
+    isTrashed = isTrashed,
     position = position,
 )
 
@@ -56,5 +57,6 @@ fun Note.toEntity(): NoteEntity = NoteEntity(
     isPinned = isPinned,
     isImportant = isImportant,
     isArchived = isArchived,
+    isTrashed = isTrashed,
     position = position,
 )

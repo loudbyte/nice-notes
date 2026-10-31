@@ -11,6 +11,7 @@ sealed class UiEvent {
     enum class SnackbarActionType {
         UNARCHIVE_NOTE,
         RESTORE_NOTE,
+        RESTORE_TO_TRASH,
         ARCHIVE_NOTE,
         RESTORE_ARCHIVED_NOTE,
     }

@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.offset
@@ -57,10 +58,10 @@ fun MainScreen(
     createNoteRequestId: Long? = null,
     viewModel: MainViewModel = hiltViewModel()
 ) {
-    val notes by viewModel.notes.collectAsState()
-    val searchQuery by viewModel.searchQuery.collectAsState()
-    val remindersFirst by viewModel.remindersFirst.collectAsState()
-    val isManagementMode by viewModel.isManagementMode.collectAsState()
+    val notes by viewModel.notes.collectAsStateWithLifecycle()
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val remindersFirst by viewModel.remindersFirst.collectAsStateWithLifecycle()
+    val isManagementMode by viewModel.isManagementMode.collectAsStateWithLifecycle()
     val lazyListState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current

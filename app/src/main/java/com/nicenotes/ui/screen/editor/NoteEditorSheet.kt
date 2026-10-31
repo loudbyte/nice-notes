@@ -30,6 +30,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.nicenotes.domain.model.Note
 import com.nicenotes.notification.NoteNotificationManager
@@ -52,10 +53,11 @@ fun NoteEditorSheet(
         viewModel.loadNote(note)
     }
 
-    val content by viewModel.content.collectAsState()
-    val isPinned by viewModel.isPinned.collectAsState()
-    val isImportant by viewModel.isImportant.collectAsState()
-    val alarmTime by viewModel.alarmTime.collectAsState()
+    val content by viewModel.content.collectAsStateWithLifecycle()
+    val isPinned by viewModel.isPinned.collectAsStateWithLifecycle()
+    val isImportant by viewModel.isImportant.collectAsStateWithLifecycle()
+    val alarmTime by viewModel.alarmTime.collectAsStateWithLifecycle()
+    val repeatRule by viewModel.repeatRule.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     var editorValue by remember(note) {
@@ -333,7 +335,7 @@ fun NoteEditorSheet(
     if (showReminderDialog) {
         ReminderDialog(
             initialAlarmTime = alarmTime,
-            initialRrule = viewModel.repeatRule.collectAsState().value,
+            initialRrule = repeatRule,
             onConfirm = { time, rrule ->
                 viewModel.setAlarm(time, rrule)
                 showReminderDialog = false

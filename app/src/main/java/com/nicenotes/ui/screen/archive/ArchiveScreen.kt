@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.nicenotes.ui.screen.editor.NoteEditorSheet
 import com.nicenotes.ui.screen.main.NoteListItem
@@ -26,7 +27,7 @@ fun ArchiveScreen(
     onBack: () -> Unit,
     viewModel: ArchiveViewModel = hiltViewModel()
 ) {
-    val notes by viewModel.notes.collectAsState()
+    val notes by viewModel.notes.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     var editingNote by remember { mutableStateOf<Note?>(null) }

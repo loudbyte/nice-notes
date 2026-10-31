@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
@@ -16,12 +17,14 @@ import com.nicenotes.notification.ReminderScheduler
 import com.nicenotes.notification.ReminderSchedulingMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import java.io.InputStream
+import kotlinx.coroutines.withContext
+import java.io.IOException
 import javax.inject.Inject
 
 sealed class SettingsEvent {
@@ -50,10 +53,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val allNotes = noteRepository.getAllNotes()
-                val json = importExportManager.exportToJson(allNotes)
+                val shareIntent = withContext(Dispatchers.IO) {
+                    val allNotes = noteRepository.getAllNotes()
+                    val json = importExportManager.exportToJson(allNotes)
+                    importExportManager.createShareIntent(context, json)
+                }
                 _events.send(
-                    SettingsEvent.ShareExport(importExportManager.createShareIntent(context, json))
+                    SettingsEvent.ShareExport(shareIntent)
                 )
             } catch (e: Exception) {
                 _events.send(SettingsEvent.Message("Export failed: ${e.message}"))
@@ -63,12 +69,16 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun importData(inputStream: InputStream) {
+    fun importData(uri: Uri) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val result = inputStream.use { stream ->
-                    importExportManager.importFromStream(stream)
+                val result = withContext(Dispatchers.IO) {
+                    val stream = context.contentResolver.openInputStream(uri)
+                        ?: throw IOException("Unable to open the selected import file.")
+                    stream.use {
+                        importExportManager.importFromStream(it)
+                    }
                 }
 
                 when (result) {

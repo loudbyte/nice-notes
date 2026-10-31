@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.nicenotes.domain.model.Note
 import com.nicenotes.ui.common.UiEvent
@@ -25,7 +26,7 @@ fun TrashScreen(
     onBack: () -> Unit,
     viewModel: TrashViewModel = hiltViewModel(),
 ) {
-    val notes by viewModel.notes.collectAsState()
+    val notes by viewModel.notes.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var showDeleteAllConfirmation by remember { mutableStateOf(false) }
     var swipeStateResetVersion by remember { mutableIntStateOf(0) }

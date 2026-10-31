@@ -20,7 +20,7 @@ NiceNotes is a dark-themed Android notes app built with Kotlin and Jetpack Compo
 - Import legacy JSON arrays and versioned NiceNotes JSON; export notes through Android's share sheet.
 - Use the app with a black/dark Compose theme with consistent snackbar colors.
 
-The feature list describes implemented UI/code surfaces. Some behaviors have caveats documented below; in particular, the current Settings export flow does not complete successfully.
+The feature list describes implemented UI/code surfaces. Some behaviors have caveats documented below.
 
 ## Requirements
 
@@ -54,7 +54,7 @@ The Room database is `nicenotes.db`, with the `notes` table defined by `NoteEnti
 
 Legacy JSON import and export are exercised by the unit test suite, including a 50-note export/re-import round trip.
 
-Import and export are exposed from **Settings → Data**. Imported note IDs use Room upsert semantics, so matching IDs overwrite existing records. Review [Feature status and known limitations](#feature-status-and-known-limitations) before relying on in-app export as a backup.
+Import and export are exposed from **Settings → Data**. Export includes all notes and shares a versioned JSON backup; import processing and export serialization/file writing run off the main thread. Imported note IDs use Room upsert semantics, so matching IDs overwrite existing records. Review [Feature status and known limitations](#feature-status-and-known-limitations) for import caveats.
 
 ## Architecture and code map
 
@@ -99,7 +99,7 @@ The application's core architecture and primary screen structures are in place. 
 | Undo | Main-screen and Archive-screen archive, unarchive, and move-to-Trash snackbars expose undo. Trash permanent-delete swipes also expose undo; Delete all requires confirmation and is permanent. |
 | Widget | A native RemoteViews `ListView` collection displays all active notes in DAO order, clips previews to one line, and refreshes its collection data directly after repository mutations without scheduling background work or replacing the whole widget layout. The first widget requests one delayed follow-up after the launcher binds its service; ordinary `onUpdate` callbacks do not enqueue repeated delayed refreshes. Each row passes its note ID to the app; the add-note control sends an Activity intent (`ACTION_CREATE_NOTE`) that opens note creation, including when the app is already running. Collection rows are provided by `NotesWidgetService`. |
 | Import | Legacy bare arrays and versioned exports are parsed and upserted; notes with a completion time are imported as archived. Imported active reminders are scheduled. Past-due repeating reminders advance to their next future occurrence; past-due one-time reminders remain unscheduled. Import requests notification permission and, when needed, exact-alarm access; if exact access is declined or unavailable, reminders use best-effort WorkManager delivery. Validation is limited, and parser failures can be reported as a successful import of zero notes. |
-| Export | JSON serialization and FileProvider sharing code exist, but the Settings ViewModel collects a long-lived Room `Flow` instead of taking one snapshot. As a result, the export operation can remain suspended and fail to produce a share event; it also reads only active notes. |
+| Export | Settings takes a one-shot snapshot of all notes and shares a versioned JSON backup through Android's share sheet. JSON serialization and file writing run off the main thread. |
 | Tests | JVM tests cover sample-data import/export, reminder interval parsing, and stable reminder-first ordering. In-memory Room DAO tests and Compose UI tests are currently absent. |
 
 This review is based on the checked-in source and a successful unit-test run; it is not a claim that every interaction has been manually tested on a device. Refer to the blueprint for the recommended completion order.

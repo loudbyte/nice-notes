@@ -9,7 +9,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.nicenotes.ui.theme.*
 import com.nicenotes.util.NoteDateFormats
+import java.time.Instant
+import java.time.ZoneOffset
 import java.util.Calendar
+
+internal fun setCalendarDateFromUtcMillis(calendar: Calendar, dateMillis: Long) {
+    val utcDate = Instant.ofEpochMilli(dateMillis).atZone(ZoneOffset.UTC)
+    calendar.set(Calendar.DAY_OF_MONTH, 1)
+    calendar.set(Calendar.YEAR, utcDate.year)
+    calendar.set(Calendar.MONTH, utcDate.monthValue - 1)
+    calendar.set(Calendar.DAY_OF_MONTH, utcDate.dayOfMonth)
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,7 +56,7 @@ fun ReminderDialog(
             confirmButton = {
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { date ->
-                        calendar.timeInMillis = date
+                        setCalendarDateFromUtcMillis(calendar, date)
                         selectedTime = calendar.timeInMillis
                         showPastTimeError = false
                     }

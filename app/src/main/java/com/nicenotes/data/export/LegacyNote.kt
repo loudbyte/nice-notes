@@ -44,6 +44,7 @@ fun LegacyNote.toDomainNote(): Note {
     }
 
     val now = System.currentTimeMillis()
+    val finishedAt = parseTime(mFinishTime)
     return Note(
         id = mLocalId,
         globalId = mGlobalId,
@@ -52,7 +53,7 @@ fun LegacyNote.toDomainNote(): Note {
         createdAt = parseTime(mCreateTime) ?: now,
         updatedAt = parseTime(mUpdateTime) ?: now,
         timestamp = parseTime(mTimestamp) ?: now,
-        finishedAt = parseTime(mFinishTime),
+        finishedAt = finishedAt,
         isDeleted = mIsDelete,
         isLocal = mIsLocal,
         alarmTime = parseTime(mAlarmTime),
@@ -66,7 +67,7 @@ fun LegacyNote.toDomainNote(): Note {
         systemVersion = mSysVersion,
         extraForceReminder = mExtra?.forceReminder ?: false,
         extraRepeatRule = mExtra?.repeatRule ?: "",
-        isArchived = mIsDelete,
+        isArchived = mIsDelete || finishedAt != null,
         position = parseTime(mUpdateTime) ?: now,
     )
 }

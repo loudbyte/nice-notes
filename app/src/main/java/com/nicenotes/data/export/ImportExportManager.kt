@@ -158,6 +158,7 @@ class ImportExportManager @Inject constructor() {
         fun parseTime(value: String?): Long? =
             value?.let(NoteDateFormats::parseLegacyTimestamp)
         val now = System.currentTimeMillis()
+        val finishedAt = parseTime(mFinishTime)
         return Note(
             id = mLocalId,
             globalId = mGlobalId,
@@ -166,7 +167,7 @@ class ImportExportManager @Inject constructor() {
             createdAt = parseTime(mCreateTime) ?: now,
             updatedAt = parseTime(mUpdateTime) ?: now,
             timestamp = parseTime(mTimestamp) ?: now,
-            finishedAt = parseTime(mFinishTime),
+            finishedAt = finishedAt,
             isDeleted = mIsDelete,
             isLocal = mIsLocal,
             alarmTime = parseTime(mAlarmTime),
@@ -182,7 +183,7 @@ class ImportExportManager @Inject constructor() {
             extraRepeatRule = mExtra?.repeatRule ?: "",
             isPinned = isPinned,
             isImportant = isImportant,
-            isArchived = isArchived || mIsDelete,
+            isArchived = isArchived || mIsDelete || finishedAt != null,
             position = if (position == 0L) now else position,
         )
     }

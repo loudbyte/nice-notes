@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.provider.Settings
 import android.util.Log
 import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
@@ -23,6 +24,11 @@ object ReminderScheduler {
 
     fun canScheduleExactAlarms(context: Context): Boolean =
         alarmManager(context).canScheduleExactAlarms()
+
+    fun exactAlarmSettingsIntent(context: Context): Intent =
+        Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+            data = Uri.parse("package:${context.packageName}")
+        }
 
     fun schedule(context: Context, note: Note): ReminderSchedulingMode {
         val alarmTime = note.alarmTime
@@ -64,6 +70,27 @@ object ReminderScheduler {
             alarmTime = alarmTime + intervalMs,
             isReminded = false
         )
+    }
+
+    fun nextFutureOccurrence(note: Note, now: Long = System.currentTimeMillis()): Note? {
+        val intervalMs = parseRruleIntervalMs(note.repeatRule) ?: return null
+        val alarmTime = note.alarmTime ?: return null
+        if (alarmTime > now) return note
+
+        val nextAlarmTime = try {
+            val elapsedMs = Math.subtractExact(now, alarmTime)
+            val intervalsToAdvance = elapsedMs / intervalMs + 1
+            Math.addExact(alarmTime, Math.multiplyExact(intervalMs, intervalsToAdvance))
+        } catch (_: ArithmeticException) {
+            return null
+        }
+        return note.copy(alarmTime = nextAlarmTime, isReminded = false)
+    }
+
+    fun prepareImportedReminder(note: Note, now: Long = System.currentTimeMillis()): Note? {
+        if (note.isArchived) return null
+        val alarmTime = note.alarmTime ?: return null
+        return if (alarmTime > now) note else nextFutureOccurrence(note, now)
     }
 
     internal fun parseRruleIntervalMs(rrule: String): Long? {

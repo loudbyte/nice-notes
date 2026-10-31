@@ -79,4 +79,76 @@ class ReminderSchedulerTest {
 
         assertNull(ReminderScheduler.nextOccurrence(note))
     }
+
+    @Test
+    fun testPrepareImportedReminderAdvancesPastDueRepeatingReminderToFuture() {
+        val interval = TimeUnit.DAYS.toMillis(1)
+        val note = Note(
+            id = "note-id",
+            content = "Reminder",
+            createdAt = 0L,
+            updatedAt = 0L,
+            timestamp = 0L,
+            alarmTime = 1_000L,
+            repeatRule = "FREQ=DAILY;INTERVAL=1",
+            isReminded = true
+        )
+
+        val next = ReminderScheduler.prepareImportedReminder(
+            note,
+            now = 1_000L + interval * 2 + interval / 2
+        )
+
+        assertEquals(1_000L + interval * 3, next?.alarmTime)
+        assertEquals(false, next?.isReminded)
+        assertEquals(note.id, next?.id)
+    }
+
+    @Test
+    fun testPrepareImportedReminderReturnsNullForPastOneTimeReminder() {
+        val note = Note(
+            id = "note-id",
+            content = "Reminder",
+            createdAt = 0L,
+            updatedAt = 0L,
+            timestamp = 0L,
+            alarmTime = 1_000L
+        )
+
+        assertNull(ReminderScheduler.prepareImportedReminder(note, now = 1_001L))
+    }
+
+    @Test
+    fun testPrepareImportedReminderDoesNotChangeFutureReminder() {
+        val note = Note(
+            id = "note-id",
+            content = "Reminder",
+            createdAt = 0L,
+            updatedAt = 0L,
+            timestamp = 0L,
+            alarmTime = 1_001L,
+            repeatRule = "FREQ=WEEKLY;INTERVAL=1"
+        )
+
+        assertEquals(note, ReminderScheduler.prepareImportedReminder(note, now = 1_000L))
+    }
+
+    @Test
+    fun testPrepareImportedReminderExcludesArchivedAndRemindersWithoutAlarm() {
+        val note = Note(
+            id = "note-id",
+            content = "Reminder",
+            createdAt = 0L,
+            updatedAt = 0L,
+            timestamp = 0L,
+            alarmTime = 1_001L
+        )
+
+        assertNull(
+            ReminderScheduler.prepareImportedReminder(note.copy(isArchived = true), now = 1_000L)
+        )
+        assertNull(
+            ReminderScheduler.prepareImportedReminder(note.copy(alarmTime = null), now = 1_000L)
+        )
+    }
 }

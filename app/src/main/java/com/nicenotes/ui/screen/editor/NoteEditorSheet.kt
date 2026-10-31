@@ -3,8 +3,6 @@ package com.nicenotes.ui.screen.editor
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
-import android.provider.Settings
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
@@ -92,7 +90,7 @@ fun NoteEditorSheet(
                             NoteNotificationManager.appNotificationSettingsIntent(context)
                         !settings.soundEnabled ->
                             NoteNotificationManager.channelSettingsIntent(context)
-                        else -> exactAlarmSettingsIntent(context)
+                        else -> ReminderScheduler.exactAlarmSettingsIntent(context)
                     }
                     onMessage(
                         "Reminder saved, but ${issues.joinToString("; ")}.",
@@ -128,7 +126,9 @@ fun NoteEditorSheet(
         if (alarmTime == null || ReminderScheduler.canScheduleExactAlarms(context)) {
             persistNote()
         } else {
-            exactAlarmPermissionLauncher.launch(exactAlarmSettingsIntent(context))
+            exactAlarmPermissionLauncher.launch(
+                ReminderScheduler.exactAlarmSettingsIntent(context)
+            )
         }
     }
 
@@ -342,8 +342,3 @@ fun NoteEditorSheet(
         )
     }
 }
-
-private fun exactAlarmSettingsIntent(context: android.content.Context): Intent =
-    Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
-        data = Uri.parse("package:${context.packageName}")
-    }

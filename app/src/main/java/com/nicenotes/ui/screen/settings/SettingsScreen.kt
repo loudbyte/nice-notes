@@ -1,8 +1,9 @@
 package com.nicenotes.ui.screen.settings
 
+import android.Manifest
 import android.content.Intent
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,7 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.nicenotes.notification.ReminderScheduler
 import com.nicenotes.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -25,7 +28,6 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val isLoading by viewModel.isLoading.collectAsState()
-    var snackbarMessage by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     val importLauncher = rememberLauncherForActivityResult(
@@ -37,6 +39,20 @@ fun SettingsScreen(
         }
     }
 
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) {
+        viewModel.onNotificationPermissionResult()
+    }
+
+    val exactAlarmPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        viewModel.onExactAlarmPermissionResult(
+            ReminderScheduler.canScheduleExactAlarms(context)
+        )
+    }
+
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
@@ -45,6 +61,22 @@ fun SettingsScreen(
                 }
                 is SettingsEvent.ShareExport -> {
                     context.startActivity(Intent.createChooser(event.intent, "Export notes"))
+                }
+                SettingsEvent.RequestNotificationPermission -> {
+                    if (ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.POST_NOTIFICATIONS
+                        ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                    ) {
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        viewModel.onNotificationPermissionResult()
+                    }
+                }
+                SettingsEvent.RequestExactAlarmAccess -> {
+                    exactAlarmPermissionLauncher.launch(
+                        ReminderScheduler.exactAlarmSettingsIntent(context)
+                    )
                 }
             }
         }

@@ -17,7 +17,7 @@ This document serves as the comprehensive architectural blueprint and system ref
 - Archive list with swipe-to-unarchive (right) and swipe-to-delete (left).
 - Settings screen with theme label and data import/export actions.
 - Exact AlarmManager reminders with a WorkManager fallback, notifications, repeat scheduling, and boot-time re-scheduling.
-- Scrollable native RemoteViews widget showing all active notes with one-line ellipsized previews; its add control sends an Activity Intent (`ACTION_CREATE_NOTE`) to open the note editor for a new note, including when the app is running.
+- Scrollable native RemoteViews widget showing all active notes with one-line ellipsized previews; the first widget requests a delayed follow-up after the launcher binds the service, while ordinary `onUpdate` callbacks do not enqueue repeated delayed refreshes. Its add control sends an Activity Intent (`ACTION_CREATE_NOTE`) to open the note editor for a new note, including when the app is running.
 - Legacy JSON-array import and versioned NiceNotes JSON serialization.
 
 ### Known limitations and pending enhancements
@@ -80,7 +80,7 @@ Room schema snapshots are generated under `app/schemas/`; the schema remains ver
 - `MainActivity` hosts the type-safe Navigation Compose graph for Main, Archive, and Settings using serializable route objects.
 - `BootCompletedReceiver` re-schedules active reminders after device boot, app updates, and exact-alarm access grants.
 - `ReminderReceiver` delivers exact alarms; WorkManager runs the best-effort fallback when exact-alarm access is unavailable.
-- `NotesWidgetReceiver` supplies the native widget layout; `NotesWidgetService` reads rows from the Hilt-provided database, and the receiver exposes a repository-triggered collection refresh helper.
+- `NotesWidgetReceiver` supplies the native widget layout and schedules a single delayed follow-up collection refresh when the first widget is enabled; `NotesWidgetService` reads rows from the Hilt-provided database, and repository writes notify the widget collection directly.
 - `FileProvider` shares a cached JSON backup from Settings.
 
 ### Data ownership and flows
@@ -127,7 +127,7 @@ Current parsing checks are not equivalent to the planned validation: the version
 | Reminders | Dialog chooses a future date/time and daily/weekly/monthly recurrence; the editor requests Android notification and exact-alarm access when needed. AlarmManager exact-while-idle alarms deliver through a receiver; WorkManager is a warned best-effort fallback. Boot and exact-access-grant broadcasts re-schedule reminders. Notification-channel sound is configured by default and disabled app/channel states link to system settings. Deep-link notifications resolve the target note directly by ID. | Sound still follows user channel settings, Do Not Disturb, and device volume. Archive does not cancel work. Monthly cadence is approximated as 30 days. |
 | Snackbar/undo | Main list and Archive screen archive, unarchive, and delete actions all expose undo actions. | — |
 | Animations | Note enter visibility, important border color, content-size and Material sheet/swipe transitions are present. | No UI tests verify motion or accessibility behavior. |
-| Widget | A native RemoteViews `ListView` collection reads and scrolls through all active notes in DAO order, displays one-line ellipsized previews, and refreshes after repository mutations. Each row passes its note ID to the app, and the add-note control sends an Activity Intent (`ACTION_CREATE_NOTE`) to open the editor for a new note, including when the app is running. Click bindings refresh after app updates and activity launches. Room read failures propagate instead of being converted to an empty list. | — |
+| Widget | A native RemoteViews `ListView` collection reads and scrolls through all active notes in DAO order, displays one-line ellipsized previews, and refreshes directly after repository mutations without WorkManager scheduling. The first widget requests a delayed follow-up to avoid notifying before the launcher binds the collection service; ordinary `onUpdate` callbacks do not schedule delayed work. Each row passes its note ID to the app, and the add-note control sends an Activity Intent (`ACTION_CREATE_NOTE`) to open the editor for a new note, including when the app is running. Click bindings refresh after app updates and activity launches. Room read failures propagate instead of being converted to an empty list. | — |
 | Import/export | File chooser, import manager, legacy compatibility, JSON export, FileProvider share intent are present. | Export collection waits on a non-terminating Flow and only observes active notes. Parser errors can look like a zero-error import; import does not reschedule reminder jobs. |
 | Testing | Import/export dataset & round-trip tests; daily/weekly/monthly simple interval parser tests. | No in-memory Room DAO tests or planned Compose UI tests. |
 

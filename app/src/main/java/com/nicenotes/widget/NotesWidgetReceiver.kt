@@ -11,8 +11,14 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.nicenotes.MainActivity
 import com.nicenotes.R
+import java.util.concurrent.TimeUnit
 
 class NotesWidgetReceiver : AppWidgetProvider() {
+
+    override fun onEnabled(context: Context) {
+        super.onEnabled(context)
+        enqueueInitialWidgetRefresh(context)
+    }
 
     override fun onUpdate(
         context: Context,
@@ -46,17 +52,31 @@ class NotesWidgetReceiver : AppWidgetProvider() {
         private const val UPDATE_WORK_NAME = "notes_widget_update"
 
         fun updateWidget(context: Context) {
-            enqueueWidgetUpdate(context)
+            notifyWidgetDataChanged(context)
         }
 
-        internal fun enqueueWidgetUpdate(context: Context) {
-            val request = OneTimeWorkRequestBuilder<NotesWidgetUpdateWorker>().build()
+        internal fun notifyWidgetDataChanged(context: Context) {
+            val manager = AppWidgetManager.getInstance(context.applicationContext)
+            val widgetIds = manager.getAppWidgetIds(
+                android.content.ComponentName(context, NotesWidgetReceiver::class.java),
+            )
+            if (widgetIds.isNotEmpty()) {
+                manager.notifyAppWidgetViewDataChanged(widgetIds, R.id.widget_notes_list)
+            }
+        }
+
+        private fun enqueueInitialWidgetRefresh(context: Context) {
+            val request = OneTimeWorkRequestBuilder<NotesWidgetUpdateWorker>()
+                .setInitialDelay(INITIAL_REFRESH_DELAY_MILLIS, TimeUnit.MILLISECONDS)
+                .build()
             WorkManager.getInstance(context.applicationContext).enqueueUniqueWork(
                 UPDATE_WORK_NAME,
                 ExistingWorkPolicy.KEEP,
                 request,
             )
         }
+
+        private const val INITIAL_REFRESH_DELAY_MILLIS = 1_000L
 
         internal fun createRemoteViews(context: Context, appWidgetId: Int): RemoteViews {
             val views = RemoteViews(context.packageName, R.layout.widget_notes)

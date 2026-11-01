@@ -12,6 +12,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Notifications
@@ -38,6 +39,7 @@ import com.nicenotes.notification.ReminderScheduler
 import com.nicenotes.notification.ReminderSchedulingMode
 import com.nicenotes.ui.component.ReminderDialog
 import com.nicenotes.ui.theme.*
+import com.nicenotes.util.NoteDateFormats
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -278,16 +280,44 @@ fun NoteEditorSheet(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                IconButton(
-                    onClick = { showReminderDialog = true },
+                Column(
                     modifier = Modifier.weight(1f)
+                        .padding(vertical = 2.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(
-                        Icons.Default.Notifications,
-                        contentDescription = "Reminder",
-                        tint = if (alarmTime != null) ReminderBlue else TextSecondary,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    IconButton(onClick = { showReminderDialog = true }) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Notifications,
+                                contentDescription = alarmTime?.let {
+                                    "Reminder at ${NoteDateFormats.formatNoteDateTime(it)}"
+                                } ?: "Reminder",
+                                tint = if (alarmTime != null) ReminderBlue else TextSecondary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            if (repeatRule.isNotBlank()) {
+                                Icon(
+                                    Icons.Default.Autorenew,
+                                    contentDescription = "Repeating reminder",
+                                    tint = ReminderBlue,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
+                    alarmTime?.let {
+                        Text(
+                            text = NoteDateFormats.formatNoteDateTime(it),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = ReminderBlue
+                            ),
+                            maxLines = 2,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
                 }
 
                 Row(

@@ -8,6 +8,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material3.*
@@ -121,6 +122,14 @@ fun NoteListItem(
                                 ),
                                 maxLines = 1
                             )
+                            if (note.repeatRule.isNotBlank()) {
+                                Icon(
+                                    imageVector = Icons.Default.Autorenew,
+                                    contentDescription = "Repeating reminder",
+                                    tint = ReminderBlue,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                            }
                         }
                     } else {
                         Spacer(modifier = Modifier.weight(1f))
@@ -166,6 +175,14 @@ fun NoteListItem(
                                     fontSize = 11.sp
                                 )
                             )
+                            if (note.repeatRule.isNotBlank()) {
+                                Icon(
+                                    imageVector = Icons.Default.Autorenew,
+                                    contentDescription = "Repeating reminder",
+                                    tint = ReminderBlue,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                            }
                         }
                     } else {
                         Spacer(modifier = Modifier.width(1.dp))

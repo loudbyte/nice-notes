@@ -82,6 +82,7 @@ fun MainScreen(
     var pendingCreatedNoteId by remember { mutableStateOf<String?>(null) }
     var showDropdown by remember { mutableStateOf(false) }
     var swipeStateResetVersion by remember { mutableIntStateOf(0) }
+    var isSnackbarVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(notes, pendingCreatedNoteId) {
         val createdNoteId = pendingCreatedNoteId
@@ -118,11 +119,13 @@ fun MainScreen(
         viewModel.events.collect { event ->
             when (event) {
                 is UiEvent.ShowSnackbar -> {
+                    isSnackbarVisible = true
                     val result = snackbarHostState.showSnackbar(
                         message = event.message,
                         actionLabel = event.action,
                         duration = SnackbarDuration.Short
                     )
+                    isSnackbarVisible = false
                     if (
                         result == SnackbarResult.ActionPerformed &&
                         event.actionType != null &&
@@ -201,7 +204,7 @@ fun MainScreen(
                     }
 
                     // Scroll to top button
-                    if (lazyListState.firstVisibleItemIndex > 0) {
+                    if (lazyListState.firstVisibleItemIndex > 0 && !isSnackbarVisible) {
                         FloatingActionButton(
                             onClick = {
                                 coroutineScope.launch {
@@ -418,11 +421,13 @@ fun MainScreen(
             onDismiss = { showEditorSheet = false },
             onMessage = { message, action ->
                 coroutineScope.launch {
+                    isSnackbarVisible = true
                     val result = snackbarHostState.showSnackbar(
                         message = message,
                         actionLabel = action?.let { "SETTINGS" },
                         duration = SnackbarDuration.Long
                     )
+                    isSnackbarVisible = false
                     if (result == SnackbarResult.ActionPerformed) {
                         action?.invoke()
                     }

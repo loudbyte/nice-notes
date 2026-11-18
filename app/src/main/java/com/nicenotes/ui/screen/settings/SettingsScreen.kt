@@ -19,6 +19,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.nicenotes.notification.ReminderScheduler
+import com.nicenotes.ui.common.AppSnackbarHost
 import com.nicenotes.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -82,16 +83,7 @@ fun SettingsScreen(
 
     Scaffold(
         containerColor = Black,
-        snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState) { data ->
-                Snackbar(
-                    snackbarData = data,
-                    containerColor = SurfaceVariant,
-                    contentColor = TextPrimary,
-                    actionColor = MaterialTheme.colorScheme.primary
-                )
-            }
-        },
+        snackbarHost = { AppSnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {

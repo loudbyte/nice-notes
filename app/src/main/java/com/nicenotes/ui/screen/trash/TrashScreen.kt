@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.nicenotes.domain.model.Note
+import com.nicenotes.ui.common.AppSnackbarHost
 import com.nicenotes.ui.common.UiEvent
 import com.nicenotes.ui.screen.main.NoteListItem
 import com.nicenotes.ui.theme.*
@@ -62,16 +63,7 @@ fun TrashScreen(
 
     Scaffold(
         containerColor = Black,
-        snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState) { data ->
-                Snackbar(
-                    snackbarData = data,
-                    containerColor = SurfaceVariant,
-                    contentColor = TextPrimary,
-                    actionColor = MaterialTheme.colorScheme.primary
-                )
-            }
-        },
+        snackbarHost = { AppSnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {

@@ -42,6 +42,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.nicenotes.domain.model.Note
 import com.nicenotes.ui.screen.editor.NoteEditorSheet
+import com.nicenotes.ui.common.AppSnackbarHost
 import com.nicenotes.ui.common.UiEvent
 import com.nicenotes.ui.theme.*
 import sh.calvin.reorderable.ReorderableItem
@@ -120,12 +121,15 @@ fun MainScreen(
             when (event) {
                 is UiEvent.ShowSnackbar -> {
                     isSnackbarVisible = true
-                    val result = snackbarHostState.showSnackbar(
-                        message = event.message,
-                        actionLabel = event.action,
-                        duration = SnackbarDuration.Short
-                    )
-                    isSnackbarVisible = false
+                    val result = try {
+                        snackbarHostState.showSnackbar(
+                            message = event.message,
+                            actionLabel = event.action,
+                            duration = SnackbarDuration.Short
+                        )
+                    } finally {
+                        isSnackbarVisible = false
+                    }
                     if (
                         result == SnackbarResult.ActionPerformed &&
                         event.actionType != null &&
@@ -176,16 +180,7 @@ fun MainScreen(
 
     Scaffold(
         containerColor = Black,
-        snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState) { data ->
-                Snackbar(
-                    snackbarData = data,
-                    containerColor = SurfaceVariant,
-                    contentColor = TextPrimary,
-                    actionColor = MaterialTheme.colorScheme.primary
-                )
-            }
-        },
+        snackbarHost = { AppSnackbarHost(snackbarHostState) },
         floatingActionButton = {
             if (!isManagementMode) {
                 Box {
@@ -422,12 +417,15 @@ fun MainScreen(
             onMessage = { message, action ->
                 coroutineScope.launch {
                     isSnackbarVisible = true
-                    val result = snackbarHostState.showSnackbar(
-                        message = message,
-                        actionLabel = action?.let { "SETTINGS" },
-                        duration = SnackbarDuration.Long
-                    )
-                    isSnackbarVisible = false
+                    val result = try {
+                        snackbarHostState.showSnackbar(
+                            message = message,
+                            actionLabel = action?.let { "SETTINGS" },
+                            duration = SnackbarDuration.Long
+                        )
+                    } finally {
+                        isSnackbarVisible = false
+                    }
                     if (result == SnackbarResult.ActionPerformed) {
                         action?.invoke()
                     }

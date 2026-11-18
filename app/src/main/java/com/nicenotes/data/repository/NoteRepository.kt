@@ -35,6 +35,14 @@ class NoteRepository @Inject constructor(
         notes.map(NoteEntity::toDomain)
     }
 
+    fun searchArchivedNotes(query: String): Flow<List<Note>> = dao.searchArchivedNotes(query).map { notes ->
+        notes.map(NoteEntity::toDomain)
+    }
+
+    fun searchTrashedNotes(query: String): Flow<List<Note>> = dao.searchTrashedNotes(query).map { notes ->
+        notes.map(NoteEntity::toDomain)
+    }
+
     suspend fun save(note: Note) {
         dao.upsert(note.toEntity())
         triggerWidgetUpdate()

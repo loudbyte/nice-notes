@@ -8,10 +8,16 @@ import com.nicenotes.domain.usecase.GetArchivedNotesUseCase
 import com.nicenotes.domain.usecase.MoveAllArchivedToTrashUseCase
 import com.nicenotes.domain.usecase.MoveNoteToTrashUseCase
 import com.nicenotes.domain.usecase.RestoreFromTrashUseCase
+import com.nicenotes.domain.usecase.SearchArchivedNotesUseCase
 import com.nicenotes.domain.usecase.UnarchiveNoteUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -20,7 +26,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ArchiveViewModel @Inject constructor(
-    getArchivedNotesUseCase: GetArchivedNotesUseCase,
+    private val getArchivedNotesUseCase: GetArchivedNotesUseCase,
+    private val searchArchivedNotesUseCase: SearchArchivedNotesUseCase,
     private val unarchiveNoteUseCase: UnarchiveNoteUseCase,
     private val archiveNoteUseCase: ArchiveNoteUseCase,
     private val moveNoteToTrashUseCase: MoveNoteToTrashUseCase,
@@ -28,13 +35,29 @@ class ArchiveViewModel @Inject constructor(
     private val moveAllArchivedToTrashUseCase: MoveAllArchivedToTrashUseCase,
 ) : ViewModel() {
 
-    val notes = getArchivedNotesUseCase()
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery = _searchQuery.asStateFlow()
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val notes = _searchQuery
+        .flatMapLatest { query ->
+            if (query.isBlank()) getArchivedNotesUseCase()
+            else searchArchivedNotesUseCase(query)
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val archivedCount = getArchivedNotesUseCase()
+        .map { it.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     private val _events = Channel<UiEvent>()
     val events = _events.receiveAsFlow()
     private val deletedNotes = mutableMapOf<String, Note>()
     private val unarchivedNotes = mutableMapOf<String, Note>()
+
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
 
     fun unarchiveNote(note: Note) {
         viewModelScope.launch {

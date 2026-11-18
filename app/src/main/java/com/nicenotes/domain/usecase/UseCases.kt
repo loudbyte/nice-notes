@@ -21,6 +21,14 @@ class SearchNotesUseCase @Inject constructor(private val repo: NoteRepository) {
     operator fun invoke(query: String): Flow<List<Note>> = repo.searchNotes(query)
 }
 
+class SearchArchivedNotesUseCase @Inject constructor(private val repo: NoteRepository) {
+    operator fun invoke(query: String): Flow<List<Note>> = repo.searchArchivedNotes(query)
+}
+
+class SearchTrashedNotesUseCase @Inject constructor(private val repo: NoteRepository) {
+    operator fun invoke(query: String): Flow<List<Note>> = repo.searchTrashedNotes(query)
+}
+
 class SaveNoteUseCase @Inject constructor(private val repo: NoteRepository) {
     suspend operator fun invoke(note: Note) {
         if (note.content.isBlank()) return

@@ -29,6 +29,8 @@ fun ArchiveScreen(
     viewModel: ArchiveViewModel = hiltViewModel()
 ) {
     val notes by viewModel.notes.collectAsStateWithLifecycle()
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val archivedCount by viewModel.archivedCount.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     var editingNote by remember { mutableStateOf<Note?>(null) }
@@ -101,17 +103,17 @@ fun ArchiveScreen(
                 actions = {
                     TextButton(
                         onClick = { showMoveAllConfirmation = true },
-                        enabled = notes.isNotEmpty()
+                        enabled = archivedCount > 0
                     ) {
                         Icon(
                             Icons.Default.Delete,
                             contentDescription = null,
-                            tint = if (notes.isNotEmpty()) ImportantRed else TextSecondary
+                            tint = if (archivedCount > 0) ImportantRed else TextSecondary
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
                             "Move all to Trash",
-                            color = if (notes.isNotEmpty()) ImportantRed else TextSecondary
+                            color = if (archivedCount > 0) ImportantRed else TextSecondary
                         )
                     }
                 },
@@ -119,79 +121,109 @@ fun ArchiveScreen(
             )
         }
     ) { padding ->
-        if (notes.isEmpty()) {
-            Box(
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = viewModel::setSearchQuery,
+                placeholder = {
+                    Text("Search archived notes...", color = TextSecondary)
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = AccentWhite.copy(alpha = 0.3f),
+                    unfocusedBorderColor = Divider,
+                    focusedTextColor = TextPrimary,
+                    unfocusedTextColor = TextPrimary,
+                    cursorColor = AccentWhite,
+                    focusedContainerColor = SurfaceVariant,
+                    unfocusedContainerColor = SurfaceVariant,
+                ),
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true,
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(Black)
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("No archived notes", color = TextSecondary)
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Black)
-                    .padding(padding),
-                contentPadding = PaddingValues(bottom = 32.dp)
-            ) {
-                items(
-                    items = notes,
-                    key = { it.id }
-                ) { note ->
-                    // Swipe right to unarchive, swipe left to move to Trash.
-                    val dismissState = key(swipeStateResetVersion) {
-                        rememberSwipeToDismissBoxState()
-                    }
-                    val currentNote by rememberUpdatedState(note)
-                    LaunchedEffect(note.id, dismissState) {
-                        snapshotFlow { dismissState.settledValue }.collect { settledValue ->
-                            when (settledValue) {
-                                SwipeToDismissBoxValue.StartToEnd ->
-                                    viewModel.unarchiveNote(currentNote)
-                                SwipeToDismissBoxValue.EndToStart ->
-                                    viewModel.deleteNote(currentNote)
-                                SwipeToDismissBoxValue.Settled -> Unit
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+            )
+            if (notes.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxSize()
+                        .background(Black),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        if (searchQuery.isBlank()) "No archived notes" else "No matching notes",
+                        color = TextSecondary
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxSize()
+                        .background(Black),
+                    contentPadding = PaddingValues(bottom = 32.dp)
+                ) {
+                    items(
+                        items = notes,
+                        key = { it.id }
+                    ) { note ->
+                        // Swipe right to unarchive, swipe left to move to Trash.
+                        val dismissState = key(swipeStateResetVersion) {
+                            rememberSwipeToDismissBoxState()
+                        }
+                        val currentNote by rememberUpdatedState(note)
+                        LaunchedEffect(note.id, dismissState) {
+                            snapshotFlow { dismissState.settledValue }.collect { settledValue ->
+                                when (settledValue) {
+                                    SwipeToDismissBoxValue.StartToEnd ->
+                                        viewModel.unarchiveNote(currentNote)
+                                    SwipeToDismissBoxValue.EndToStart ->
+                                        viewModel.deleteNote(currentNote)
+                                    SwipeToDismissBoxValue.Settled -> Unit
+                                }
                             }
                         }
-                    }
 
-                    val isDelete = dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart
-                    SwipeToDismissBox(
-                        state = dismissState,
-                        backgroundContent = {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = 12.dp, vertical = 4.dp)
-                                    .background(
-                                        if (isDelete) ImportantRed else ReminderBlue,
-                                        RoundedCornerShape(12.dp)
-                                    ),
-                                contentAlignment = if (isDelete) Alignment.CenterEnd else Alignment.CenterStart
-                            ) {
-                                Text(
-                                    if (isDelete) "Move to Trash" else "Unarchive",
-                                    color = AccentWhite,
-                                    modifier = Modifier.padding(horizontal = 16.dp),
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                        },
-                        enableDismissFromStartToEnd = true,
-                        enableDismissFromEndToStart = true,
-                    ) {
-                        NoteListItem(
-                            note = note,
-                            isManagementMode = false,
-                            onClick = {
-                                editingNote = note
-                                showEditor = true
+                        val isDelete = dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart
+                        SwipeToDismissBox(
+                            state = dismissState,
+                            backgroundContent = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                                        .background(
+                                            if (isDelete) ImportantRed else ReminderBlue,
+                                            RoundedCornerShape(12.dp)
+                                        ),
+                                    contentAlignment = if (isDelete) Alignment.CenterEnd else Alignment.CenterStart
+                                ) {
+                                    Text(
+                                        if (isDelete) "Move to Trash" else "Unarchive",
+                                        color = AccentWhite,
+                                        modifier = Modifier.padding(horizontal = 16.dp),
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
                             },
-                            onLongClick = {},
-                        )
+                            enableDismissFromStartToEnd = true,
+                            enableDismissFromEndToStart = true,
+                        ) {
+                            NoteListItem(
+                                note = note,
+                                isManagementMode = false,
+                                onClick = {
+                                    editingNote = note
+                                    showEditor = true
+                                },
+                                onLongClick = {},
+                            )
+                        }
                     }
                 }
             }
@@ -222,7 +254,7 @@ fun ArchiveScreen(
         AlertDialog(
             onDismissRequest = { showMoveAllConfirmation = false },
             title = { Text("Move all notes to Trash?") },
-            text = { Text("This moves ${notes.size} notes to Trash.") },
+            text = { Text("This moves $archivedCount notes to Trash.") },
             confirmButton = {
                 TextButton(
                     onClick = {

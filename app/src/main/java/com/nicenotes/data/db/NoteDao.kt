@@ -38,6 +38,23 @@ interface NoteDao {
     """)
     fun searchActiveNotes(query: String): Flow<List<NoteEntity>>
 
+    @Query("""
+        SELECT * FROM notes
+        WHERE isArchived = 1
+          AND isTrashed = 0
+          AND mContent LIKE '%' || :query || '%'
+        ORDER BY mUpdateTime DESC
+    """)
+    fun searchArchivedNotes(query: String): Flow<List<NoteEntity>>
+
+    @Query("""
+        SELECT * FROM notes
+        WHERE isTrashed = 1
+          AND mContent LIKE '%' || :query || '%'
+        ORDER BY mUpdateTime DESC
+    """)
+    fun searchTrashedNotes(query: String): Flow<List<NoteEntity>>
+
     @Query("SELECT * FROM notes WHERE isArchived = 1 AND isTrashed = 0 ORDER BY mUpdateTime DESC")
     fun observeArchivedNotes(): Flow<List<NoteEntity>>
 

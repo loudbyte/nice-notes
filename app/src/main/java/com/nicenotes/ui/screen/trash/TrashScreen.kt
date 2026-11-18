@@ -27,6 +27,8 @@ fun TrashScreen(
     viewModel: TrashViewModel = hiltViewModel(),
 ) {
     val notes by viewModel.notes.collectAsStateWithLifecycle()
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val trashedCount by viewModel.trashedCount.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var showDeleteAllConfirmation by remember { mutableStateOf(false) }
     var swipeStateResetVersion by remember { mutableIntStateOf(0) }
@@ -86,17 +88,17 @@ fun TrashScreen(
                 actions = {
                     TextButton(
                         onClick = { showDeleteAllConfirmation = true },
-                        enabled = notes.isNotEmpty()
+                        enabled = trashedCount > 0
                     ) {
                         Icon(
                             Icons.Default.Delete,
                             contentDescription = null,
-                            tint = if (notes.isNotEmpty()) ImportantRed else TextSecondary
+                            tint = if (trashedCount > 0) ImportantRed else TextSecondary
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
                             "Delete all",
-                            color = if (notes.isNotEmpty()) ImportantRed else TextSecondary
+                            color = if (trashedCount > 0) ImportantRed else TextSecondary
                         )
                     }
                 },
@@ -104,77 +106,107 @@ fun TrashScreen(
             )
         }
     ) { padding ->
-        if (notes.isEmpty()) {
-            Box(
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = viewModel::setSearchQuery,
+                placeholder = {
+                    Text("Search trash...", color = TextSecondary)
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = AccentWhite.copy(alpha = 0.3f),
+                    unfocusedBorderColor = Divider,
+                    focusedTextColor = TextPrimary,
+                    unfocusedTextColor = TextPrimary,
+                    cursorColor = AccentWhite,
+                    focusedContainerColor = SurfaceVariant,
+                    unfocusedContainerColor = SurfaceVariant,
+                ),
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true,
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(Black)
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("Trash is empty", color = TextSecondary)
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Black)
-                    .padding(padding),
-                contentPadding = PaddingValues(bottom = 32.dp)
-            ) {
-                items(notes, key = Note::id) { note ->
-                    val dismissState = key(swipeStateResetVersion) {
-                        rememberSwipeToDismissBoxState()
-                    }
-                    val currentNote by rememberUpdatedState(note)
-                    LaunchedEffect(note.id, dismissState) {
-                        snapshotFlow { dismissState.settledValue }.collect { settledValue ->
-                            when (settledValue) {
-                                SwipeToDismissBoxValue.StartToEnd ->
-                                    viewModel.permanentlyDeleteNote(currentNote)
-                                SwipeToDismissBoxValue.EndToStart ->
-                                    viewModel.restoreNote(currentNote)
-                                SwipeToDismissBoxValue.Settled -> Unit
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+            )
+            if (notes.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxSize()
+                        .background(Black),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        if (searchQuery.isBlank()) "Trash is empty" else "No matching notes",
+                        color = TextSecondary
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxSize()
+                        .background(Black),
+                    contentPadding = PaddingValues(bottom = 32.dp)
+                ) {
+                    items(notes, key = Note::id) { note ->
+                        val dismissState = key(swipeStateResetVersion) {
+                            rememberSwipeToDismissBoxState()
+                        }
+                        val currentNote by rememberUpdatedState(note)
+                        LaunchedEffect(note.id, dismissState) {
+                            snapshotFlow { dismissState.settledValue }.collect { settledValue ->
+                                when (settledValue) {
+                                    SwipeToDismissBoxValue.StartToEnd ->
+                                        viewModel.permanentlyDeleteNote(currentNote)
+                                    SwipeToDismissBoxValue.EndToStart ->
+                                        viewModel.restoreNote(currentNote)
+                                    SwipeToDismissBoxValue.Settled -> Unit
+                                }
                             }
                         }
-                    }
 
-                    val isPermanentDelete =
-                        dismissState.dismissDirection == SwipeToDismissBoxValue.StartToEnd
-                    SwipeToDismissBox(
-                        state = dismissState,
-                        backgroundContent = {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = 12.dp, vertical = 4.dp)
-                                    .background(
-                                        if (isPermanentDelete) ImportantRed else ReminderBlue,
-                                        RoundedCornerShape(12.dp)
-                                    ),
-                                contentAlignment = if (isPermanentDelete) {
-                                    Alignment.CenterStart
-                                } else {
-                                    Alignment.CenterEnd
+                        val isPermanentDelete =
+                            dismissState.dismissDirection == SwipeToDismissBoxValue.StartToEnd
+                        SwipeToDismissBox(
+                            state = dismissState,
+                            backgroundContent = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                                        .background(
+                                            if (isPermanentDelete) ImportantRed else ReminderBlue,
+                                            RoundedCornerShape(12.dp)
+                                        ),
+                                    contentAlignment = if (isPermanentDelete) {
+                                        Alignment.CenterStart
+                                    } else {
+                                        Alignment.CenterEnd
+                                    }
+                                ) {
+                                    Text(
+                                        if (isPermanentDelete) "Delete permanently" else "Restore",
+                                        color = AccentWhite,
+                                        modifier = Modifier.padding(horizontal = 16.dp),
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
                                 }
-                            ) {
-                                Text(
-                                    if (isPermanentDelete) "Delete permanently" else "Restore",
-                                    color = AccentWhite,
-                                    modifier = Modifier.padding(horizontal = 16.dp),
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                        },
-                        enableDismissFromStartToEnd = true,
-                        enableDismissFromEndToStart = true,
-                    ) {
-                        NoteListItem(
-                            note = note,
-                            isManagementMode = false,
-                            onClick = {},
-                            onLongClick = {},
-                        )
+                            },
+                            enableDismissFromStartToEnd = true,
+                            enableDismissFromEndToStart = true,
+                        ) {
+                            NoteListItem(
+                                note = note,
+                                isManagementMode = false,
+                                onClick = {},
+                                onLongClick = {},
+                            )
+                        }
                     }
                 }
             }
@@ -185,7 +217,7 @@ fun TrashScreen(
         AlertDialog(
             onDismissRequest = { showDeleteAllConfirmation = false },
             title = { Text("Delete all notes in Trash?") },
-            text = { Text("This permanently deletes ${notes.size} notes. This action cannot be undone.") },
+            text = { Text("This permanently deletes $trashedCount notes. This action cannot be undone.") },
             confirmButton = {
                 TextButton(
                     onClick = {

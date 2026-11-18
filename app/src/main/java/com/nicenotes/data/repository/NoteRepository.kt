@@ -74,6 +74,16 @@ class NoteRepository @Inject constructor(
         triggerWidgetUpdate()
     }
 
+    suspend fun moveAllArchivedToTrash() {
+        dao.getArchivedNotes().forEach { archivedNote ->
+            if (archivedNote.mAlarmTime != null) {
+                ReminderScheduler.cancel(context, archivedNote.mLocalId)
+            }
+        }
+        dao.trashAllArchived()
+        triggerWidgetUpdate()
+    }
+
     suspend fun archive(note: Note) {
         dao.update(
             note.copy(

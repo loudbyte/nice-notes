@@ -68,6 +68,12 @@ interface NoteDao {
     @Query("SELECT * FROM notes WHERE isTrashed = 1")
     suspend fun getTrashedNotes(): List<NoteEntity>
 
+    @Query("SELECT * FROM notes WHERE isArchived = 1 AND isTrashed = 0")
+    suspend fun getArchivedNotes(): List<NoteEntity>
+
+    @Query("UPDATE notes SET isTrashed = 1 WHERE isArchived = 1 AND isTrashed = 0")
+    suspend fun trashAllArchived()
+
     @Query("SELECT * FROM notes")
     suspend fun getAllNotes(): List<NoteEntity>
 

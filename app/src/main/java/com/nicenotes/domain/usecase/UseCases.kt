@@ -36,6 +36,10 @@ class MoveNoteToTrashUseCase @Inject constructor(private val repo: NoteRepositor
     suspend operator fun invoke(note: Note) = repo.moveToTrash(note)
 }
 
+class MoveAllArchivedToTrashUseCase @Inject constructor(private val repo: NoteRepository) {
+    suspend operator fun invoke() = repo.moveAllArchivedToTrash()
+}
+
 class RestoreFromTrashUseCase @Inject constructor(private val repo: NoteRepository) {
     suspend operator fun invoke(note: Note) = repo.restoreFromTrash(note)
 }

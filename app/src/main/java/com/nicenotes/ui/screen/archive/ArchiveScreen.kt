@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,6 +34,7 @@ fun ArchiveScreen(
     var editingNote by remember { mutableStateOf<Note?>(null) }
     var showEditor by remember { mutableStateOf(false) }
     var swipeStateResetVersion by remember { mutableIntStateOf(0) }
+    var showMoveAllConfirmation by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -94,6 +96,23 @@ fun ArchiveScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = TextSecondary)
+                    }
+                },
+                actions = {
+                    TextButton(
+                        onClick = { showMoveAllConfirmation = true },
+                        enabled = notes.isNotEmpty()
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = null,
+                            tint = if (notes.isNotEmpty()) ImportantRed else TextSecondary
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            "Move all to Trash",
+                            color = if (notes.isNotEmpty()) ImportantRed else TextSecondary
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Black)
@@ -196,6 +215,32 @@ fun ArchiveScreen(
                 }
             },
             onDelete = viewModel::deleteNote,
+        )
+    }
+
+    if (showMoveAllConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showMoveAllConfirmation = false },
+            title = { Text("Move all notes to Trash?") },
+            text = { Text("This moves ${notes.size} notes to Trash.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showMoveAllConfirmation = false
+                        viewModel.moveAllToTrash()
+                    }
+                ) {
+                    Text("Move all", color = ImportantRed)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showMoveAllConfirmation = false }) {
+                    Text("Cancel")
+                }
+            },
+            containerColor = SurfaceVariant,
+            titleContentColor = TextPrimary,
+            textContentColor = TextSecondary,
         )
     }
 }

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.nicenotes.domain.model.Note
 import com.nicenotes.domain.usecase.ArchiveNoteUseCase
 import com.nicenotes.domain.usecase.GetArchivedNotesUseCase
+import com.nicenotes.domain.usecase.MoveAllArchivedToTrashUseCase
 import com.nicenotes.domain.usecase.MoveNoteToTrashUseCase
 import com.nicenotes.domain.usecase.RestoreFromTrashUseCase
 import com.nicenotes.domain.usecase.UnarchiveNoteUseCase
@@ -24,6 +25,7 @@ class ArchiveViewModel @Inject constructor(
     private val archiveNoteUseCase: ArchiveNoteUseCase,
     private val moveNoteToTrashUseCase: MoveNoteToTrashUseCase,
     private val restoreFromTrashUseCase: RestoreFromTrashUseCase,
+    private val moveAllArchivedToTrashUseCase: MoveAllArchivedToTrashUseCase,
 ) : ViewModel() {
 
     val notes = getArchivedNotesUseCase()
@@ -57,6 +59,13 @@ class ArchiveViewModel @Inject constructor(
                 actionType = UiEvent.SnackbarActionType.RESTORE_ARCHIVED_NOTE,
                 noteId = note.id
             ))
+        }
+    }
+
+    fun moveAllToTrash() {
+        viewModelScope.launch {
+            moveAllArchivedToTrashUseCase()
+            _events.send(UiEvent.ShowSnackbar(message = "All notes moved to Trash"))
         }
     }
 

@@ -58,13 +58,13 @@ private fun AppSnackbar(data: SnackbarData) {
                 TextButton(
                     onClick = { data.performAction() },
                     border = BorderStroke(1.dp, AccentWhite),
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp)
                 ) {
                     Text(
                         text = label,
                         color = AccentWhite,
                         fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleSmall
+                        style = MaterialTheme.typography.titleMedium
                     )
                 }
             }

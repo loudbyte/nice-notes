@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -208,11 +209,14 @@ fun MainScreen(
                             },
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
-                                .offset(y = (-80).dp),
-                            containerColor = Black,
+                                .offset(y = (-80).dp)
+                                .size(56.dp)
+                                .border(2.dp, TextSecondary, RoundedCornerShape(16.dp)),
+                            containerColor = SurfaceVariant,
+                            contentColor = AccentWhite,
                             shape = RoundedCornerShape(16.dp)
                         ) {
-                            Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Scroll to top")
+                            Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Scroll to top", modifier = Modifier.size(36.dp))
                         }
                     }
                 }

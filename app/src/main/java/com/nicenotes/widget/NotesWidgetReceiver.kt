@@ -117,7 +117,6 @@ class NotesWidgetReceiver : AppWidgetProvider() {
                 R.id.widget_notes_list,
                 collectionPendingIntent
             )
-            views.setOnClickPendingIntent(R.id.widget_header, openAppPendingIntent)
             views.setOnClickPendingIntent(R.id.widget_add_note, createNotePendingIntent)
             views.setOnClickPendingIntent(R.id.widget_empty_view, openAppPendingIntent)
             return views

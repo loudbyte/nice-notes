@@ -194,9 +194,11 @@ fun MainScreen(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
                         shape = CircleShape,
-                        modifier = Modifier.size(56.dp)
+                        modifier = Modifier
+                            .size(56.dp)
+                            .border(2.dp, TextSecondary, CircleShape)
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "New note")
+                        Icon(Icons.Default.Add, contentDescription = "New note", modifier = Modifier.size(36.dp))
                     }
 
                     // Scroll to top button
